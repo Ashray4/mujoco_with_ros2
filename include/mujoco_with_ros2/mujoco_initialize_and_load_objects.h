@@ -2,7 +2,7 @@
 // -- END LICENSE BLOCK -------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-/*!\file    mujoco_simulator.h
+/*!\file    mujoco_initialize_and_load_objects.h
  *
  * \author  Saksham Kohli <kohli@rptu.de>
  * \date    2025/09/10
@@ -46,9 +46,9 @@ public:
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
   // and persists and initiliaze the class)
-  static int init();
+  static void init();
   // Initialize the Simulation and load objects
-  int initialize_simulation();
+  void initialize_simulation();
 };
 
 

@@ -106,16 +106,17 @@ void MujocoInitLoadObjects::scrollCBImpl([[maybe_unused]] GLFWwindow* window,
 }
 
 
-void MujocoInitLoadObjects::init()
+mjModel* MujocoInitLoadObjects::init()
 {
   std::cout << std::flush << "Simulation Initialized" << std::endl;
-  getInstance().initialize_simulation();
+  return getInstance().initialize_simulation();
 }
-void MujocoInitLoadObjects::initialize_simulation()
+mjModel* MujocoInitLoadObjects::initialize_simulation()
 {
   // (Test) Load XML manually for now and test the model
   try
-  {
+  { 
+    
     char err_str[1000];
     int err_str_sz = 1000;
     spec           = mj_parseXML(
@@ -127,12 +128,12 @@ void MujocoInitLoadObjects::initialize_simulation()
     {
       std::cout << std::flush << "Problem with model" << std::endl;
       std::cout << std::flush << err_str << std::endl;
-      return;
+      return nullptr;
     }
     
     // std::cout << std::flush << "Looking for world frame" << std::endl;
 
-    // mjsBody* world = mjs_findBody(spec, "base");
+    // mjsBody* world = mjs_findBody(spec, "robotiq_85_right_finger_tip_link");
     // if (!world)
     // {
     //   std::cout << std::flush << "Problem with world frame (no world frame)" << std::endl;
@@ -140,76 +141,80 @@ void MujocoInitLoadObjects::initialize_simulation()
     // }
 
     // mjsGeom* world_floor = mjs_addGeom(world, NULL);
-    // world_floor->type    = mjGEOM_PLANE;
+    // world_floor->type    = mjGEOM_BOX;
+    // world_floor->size[0] = world_floor->size[1] = world_floor->size[2] = 0.06; 
+
     m                    = mj_compile(spec, NULL);
     d                    = mj_makeData(m);
 
-    if (!glfwInit())
-    {
-      mju_error("Could not initialize GLFW");
-    }
+    // if (!glfwInit())
+    // {
+    //   mju_error("Could not initialize GLFW");
+    // }
 
-    // create window, make OpenGL context current, request v-sync
-    GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    // // create window, make OpenGL context current, request v-sync
+    // GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
+    // glfwMakeContextCurrent(window);
+    // glfwSwapInterval(1);
 
-    // initialize visualization data structures
-    mjv_defaultCamera(&cam);
-    mjv_defaultOption(&opt);
-    mjv_defaultScene(&scn);
-    mjr_defaultContext(&con);
+    // // initialize visualization data structures
+    // mjv_defaultCamera(&cam);
+    // mjv_defaultOption(&opt);
+    // mjv_defaultScene(&scn);
+    // mjr_defaultContext(&con);
 
-    // create scene and context
-    mjv_makeScene(m, &scn, 2000);
-    mjr_makeContext(m, &con, mjFONTSCALE_150);
-
-
-    // install GLFW mouse and keyboard callbacks
-    // glfwSetKeyCallback(window, keyboardCB);
-    glfwSetMouseButtonCallback(window, mouseButtonCB);
-    glfwSetCursorPosCallback(window, mouseMoveCB);
-    glfwSetScrollCallback(window, scrollCB);
+    // // create scene and context
+    // mjv_makeScene(m, &scn, 2000);
+    // mjr_makeContext(m, &con, mjFONTSCALE_150);
 
 
-    // ... install GLFW keyboard and mouse callbacks
+    // // install GLFW mouse and keyboard callbacks
+    // // glfwSetKeyCallback(window, keyboardCB);
+    // glfwSetMouseButtonCallback(window, mouseButtonCB);
+    // glfwSetCursorPosCallback(window, mouseMoveCB);
+    // glfwSetScrollCallback(window, scrollCB);
 
-    // run main loop, target real-time simulation and 60 fps rendering
-    while (!glfwWindowShouldClose(window))
-    {
-      // advance interactive simulation for 1/60 sec
-      //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
-      //  this loop will finish on time for the next frame to be rendered at 60 fps.
-      //  Otherwise add a cpu timer and exit this loop when it is time to render.
-      mjtNum simstart = d->time;
-      while (d->time - simstart < 1.0 / 60.0)
-      {
-        mj_step(m, d);
-      }
 
-      // get framebuffer viewport
-      mjrRect viewport = {0, 0, 0, 0};
-      glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
+    // // ... install GLFW keyboard and mouse callbacks
 
-      // update scene and render
-      mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
-      mjr_render(viewport, &scn, &con);
+    // // run main loop, target real-time simulation and 60 fps rendering
+    // while (!glfwWindowShouldClose(window))
+    // {
+    //   // advance interactive simulation for 1/60 sec
+    //   //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
+    //   //  this loop will finish on time for the next frame to be rendered at 60 fps.
+    //   //  Otherwise add a cpu timer and exit this loop when it is time to render.
+    //   mjtNum simstart = d->time;
+    //   while (d->time - simstart < 1.0 / 60.0)
+    //   {
+    //     mj_step(m, d);
+    //   }
 
-      // swap OpenGL buffers (blocking call due to v-sync)
-      glfwSwapBuffers(window);
+    //   // get framebuffer viewport
+    //   mjrRect viewport = {0, 0, 0, 0};
+    //   glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
 
-      // process pending GUI events, call GLFW callbacks
-      glfwPollEvents();
-    }
+    //   // update scene and render
+    //   mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
+    //   mjr_render(viewport, &scn, &con);
 
-    // free visualization storage
-    mjv_freeScene(&scn);
-    mjr_freeContext(&con);
+    //   // swap OpenGL buffers (blocking call due to v-sync)
+    //   glfwSwapBuffers(window);
 
-    // free MuJoCo model and data
-    mj_deleteData(d);
-    mj_deleteModel(m);
-    glfwTerminate();
+    //   // process pending GUI events, call GLFW callbacks
+    //   glfwPollEvents();
+    // }
+
+    // // free visualization storage
+    // mjv_freeScene(&scn);
+    // mjr_freeContext(&con);
+
+    // // free MuJoCo model and data
+    // mj_deleteData(d);
+    // mj_deleteModel(m);
+    // glfwTerminate();
+
+    return m;
   }
   catch (const std::exception& e)
   {

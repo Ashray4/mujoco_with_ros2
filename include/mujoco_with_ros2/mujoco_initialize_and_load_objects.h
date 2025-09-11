@@ -28,6 +28,7 @@
 #include "GLFW/glfw3.h"
 #include "mujoco/mujoco.h"
 
+#include <rclcpp/rclcpp.hpp>
 namespace mujoco_with_ros2 {
 
 class MujocoInitLoadObjects
@@ -68,9 +69,9 @@ public:
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
   // and persists and initiliaze the class)
-  static void init();
+  static mjModel* init();
   // Initialize the Simulation and load objects
-  void initialize_simulation();
+  mjModel* initialize_simulation();
 
   // Keyboard callback
   // static void keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods);

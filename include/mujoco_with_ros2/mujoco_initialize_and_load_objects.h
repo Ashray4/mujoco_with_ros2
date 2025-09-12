@@ -24,6 +24,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include "GLFW/glfw3.h"
 #include "mujoco/mujoco.h"
@@ -64,7 +65,17 @@ public:
   double lastx       = 0;
   double lasty       = 0;
 
-
+  //Buffers for interaction with ROS2 Hardware_interface_Interaction
+  //Joint states
+  std::vector<double> joint_positions_state;
+  std::vector<double> joint_velocity_state;
+  std::vector<double> joint_acceleration_state;
+  
+  //Joint Inputs
+  std::vector<double> joint_positions_input;
+  std::vector<double> joint_velocity_input;
+  std::vector<double> joint_acceleration_input;
+  
   //(To Review maybe a better way (Singleton Class))
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
@@ -72,6 +83,10 @@ public:
   static mjModel* init();
   // Initialize the Simulation and load objects
   mjModel* initialize_simulation();
+
+  //Start Simulation loop and launch the rendering window
+  static void start_simulation();
+  void starting_simulation();
 
   // Keyboard callback
   // static void keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods);
@@ -88,6 +103,14 @@ public:
   // Scroll callback
   static void scrollCB(GLFWwindow* window, double xoffset, double yoffset);
   void scrollCBImpl(GLFWwindow* window, double xoffset, double yoffset);
+
+  // Control input callback for the solver
+  static void controlCB(const mjModel* m, mjData* d);
+  void controlCBImpl(const mjModel* m, mjData* d);
+
+  // Delete instance and cleanup 
+  static void DeleteData();
+  void DeletingData();
 };
 
 

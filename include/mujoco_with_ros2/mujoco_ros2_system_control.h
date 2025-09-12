@@ -75,6 +75,11 @@ public:
   MUJOCO_ROS2_SYSTEM_PUBLIC hardware_interface::return_type
   write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
+protected:
+ std::vector<double>joint_pos_vector_;
+ std::vector<double>joint_vel_vector_;
+ std::vector<double>joint_eff_vector_;
+ 
 public:
  mjModel* current_robot_model;
  std::shared_ptr<mujoco_with_ros2::MujocoInitLoadObjects> loaded_object_simulation;

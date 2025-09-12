@@ -20,12 +20,15 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
     return hardware_interface::CallbackReturn::ERROR;
   }
 
-  // params_.writeCommandFrequency(0);
+  // Zero Initialize all joint positions for now (T0:Do read initial positions from the model)
+  joint_pos_vector_.resize(info.joints.size(), 0.0);
+  joint_vel_vector_.resize(info.joints.size(), 0.0);
+  joint_eff_vector_.resize(info.joints.size(), 0.0);
 
-  //REPLACE THE JOINT SIZE WITH ACCURATE JOINTS FROM MUJOCO
+  // REPLACE THE JOINT SIZE WITH ACCURATE JOINTS FROM MUJOCO
   for (const hardware_interface::ComponentInfo& joint : info_.joints)
   {
-    if (joint.command_interfaces.size() != 6)
+    if (joint.command_interfaces.size() != 3)
     {
       RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
                    "Joint '%s' has %zu command interfaces found. 1 expected.",
@@ -43,7 +46,7 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
                    hardware_interface::HW_IF_POSITION);
       return hardware_interface::CallbackReturn::ERROR;
     }
-    if (joint.command_interfaces[0].name == hardware_interface::HW_IF_VELOCITY)
+    if (joint.command_interfaces[1].name == hardware_interface::HW_IF_VELOCITY)
     {
       RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
                    "Joint '%s' have %s command interfaces found. '%s' expected.",
@@ -52,7 +55,7 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
                    hardware_interface::HW_IF_VELOCITY);
       return hardware_interface::CallbackReturn::ERROR;
     }
-    if (joint.command_interfaces[0].name == hardware_interface::HW_IF_EFFORT)
+    if (joint.command_interfaces[2].name == hardware_interface::HW_IF_EFFORT)
     {
       RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
                    "Joint '%s' have %s command interfaces found. '%s' expected.",
@@ -61,7 +64,7 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
                    hardware_interface::HW_IF_EFFORT);
       return hardware_interface::CallbackReturn::ERROR;
     }
-    if (joint.state_interfaces.size() != 3*6)
+    if (joint.state_interfaces.size() != 3)
     {
       RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
                    "Joint '%s' has %zu state interface. 3 expected.",
@@ -107,12 +110,17 @@ MujocowithRos2SystemHardware::export_state_interfaces()
 {
   std::vector<hardware_interface::StateInterface> state_interfaces;
 
-  state_interfaces.emplace_back(hardware_interface::StateInterface(
-    cfg_.joint_name, hardware_interface::HW_IF_VELOCITY, &read_f));
-  state_interfaces.emplace_back(
-    hardware_interface::StateInterface(cfg_.joint_name, hardware_interface::HW_IF_EFFORT, &read_c));
-  state_interfaces.emplace_back(
-    hardware_interface::StateInterface(cfg_.joint_name, speed_agree, &read_s));
+  for (size_t i = 0; i < info_.joints.size(); ++i)
+  {
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &joint_pos_vector_[i]));
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &joint_vel_vector_[i]));
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_eff_vector_[i]));
+  }
 
 
   return state_interfaces;
@@ -123,8 +131,17 @@ MujocowithRos2SystemHardware::export_command_interfaces()
 {
   std::vector<hardware_interface::CommandInterface> command_interfaces;
 
-  command_interfaces.emplace_back(hardware_interface::CommandInterface(
-    cfg_.joint_name, hardware_interface::HW_IF_VELOCITY, &cfg_.write_velocity));
+  for (size_t i = 0; i < info_.joints.size(); ++i)
+  {
+    command_interfaces.emplace_back(hardware_interface::CommandInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_POSITION,&joint_pos_vector_[i]));
+
+    command_interfaces.emplace_back(hardware_interface::CommandInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &joint_vel_vector_[i]));
+    
+    command_interfaces.emplace_back(hardware_interface::CommandInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_eff_vector_[i]));
+  }
 
 
   return command_interfaces;
@@ -200,7 +217,7 @@ MujocowithRos2SystemHardware::on_deactivate(const rclcpp_lifecycle::State& /*pre
 
 
 hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp::Time& /*time*/,
-                                                                 const rclcpp::Duration& period)
+                                                                   const rclcpp::Duration& period)
 {
   auto t_fq = con_inv->currentFrequency();
   read_f    = (t_fq / 100) * 6.28;
@@ -218,7 +235,8 @@ hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp:
 }
 
 hardware_interface::return_type
-MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/, const rclcpp::Duration& /*period*/)
+MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
+                                    const rclcpp::Duration& /*period*/)
 {
   double givenFrequency{cfg_.write_velocity};
 
@@ -254,7 +272,7 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/, const rclcpp::
   return hardware_interface::return_type::OK;
 }
 
-} // namespace mujoco_with_ros
+} // namespace mujoco_with_ros2
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(mujoco_with_ros::MujocowithRos2SystemHardware,

@@ -11,7 +11,7 @@ MujocowithRos2SystemHardware::~MujocowithRos2SystemHardware()
 hardware_interface::CallbackReturn
 MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& info)
 {
-  current_robot_model = loaded_object_simulation->init();
+  
 
   if (hardware_interface::SystemInterface::on_init(info) !=
       hardware_interface::CallbackReturn::SUCCESS)
@@ -25,6 +25,9 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   joint_vel_vector_.resize(info.joints.size(), 0.0);
   joint_eff_vector_.resize(info.joints.size(), 0.0);
 
+  //initialize simulation
+  current_robot_model = loaded_object_simulation->init();
+  
   // REPLACE THE JOINT SIZE WITH ACCURATE JOINTS FROM MUJOCO
   for (const hardware_interface::ComponentInfo& joint : info_.joints)
   {

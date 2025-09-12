@@ -115,7 +115,7 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
   // Check if controls are equal
    for (int i = 0; i < m->nq; ++i)
         {
-            d->ctrl[i] = 1.0;                                                                                                                              
+            d->ctrl[i] = 0.0;                                                                                                                              
         }
 }
 mjModel* MujocoInitLoadObjects::init()
@@ -142,7 +142,10 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
     }
 
     // To:Do Possible Object creation and spec editing here
-
+    
+    spec->option.disableactuator = 1;
+    spec->option.disableactuator = 2;
+    
     m = mj_compile(spec, NULL);
     d = mj_makeData(m);
 

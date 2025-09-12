@@ -7,24 +7,17 @@
     <default class="ur5e">
       <material specular="0.5" shininess="0.25" />
       <joint axis="0 1 0" range="-6.28319 6.28319" armature="0.1" damping="1000" />
-      <position ctrllimited="true" forcelimited="true" ctrlrange="-6.2831 6.2831"
-        forcerange="-150 150" /> <!-- gaintype="fixed" biastype="affine"  gainprm="4500" biasprm="0
-      -4500 -600" -->
-      <!-- <position ctrllimited="true" forcelimited="true" ctrlrange="-6.2831 6.2831"/> -->
+      <general gaintype="fixed" biastype="affine" ctrlrange="-6.2831 6.2831" gainprm="2000"
+        biasprm="0 -2000 -400"
+        forcerange="-150 150" />
       <default class="size3">
-        <joint armature="0.1" damping="1000" />
-        <!-- <position kp="3500" forcerange="-150 150"/> -->
         <default class="size3_limited">
           <joint range="-3.1415 3.1415" />
-          <!-- <position ctrlrange="-3.1415 3.1415"/> -->
-          <position ctrllimited="true" ctrlrange="-3.1415 3.1415" />
+          <general ctrlrange="-3.1415 3.1415" />
         </default>
       </default>
       <default class="size1">
-        <joint armature="0.1" damping="75" />
-        <!-- <position kp="3000" forcerange="-28 28"/> -->
-        <position forcelimited="true" forcerange="-28 28" />  <!--  gainprm="3000" biasprm="0 -3000
-        -100"-->
+        <general gainprm="500" biasprm="0 -500 -100" forcerange="-28 28" />
       </default>
       <default class="ur5e:visual">
         <geom type="mesh" contype="0" conaffinity="0" group="2" />

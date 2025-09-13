@@ -117,6 +117,7 @@ void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
 void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
 {
   // Check if controls are equal
+  
   for (int i = 0; i < m->nq; ++i)
   {
     d->ctrl[i]                  = joint_positions_input[i];
@@ -164,7 +165,7 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
     joint_velocity_state.resize(m->nq, 0.0);
     joint_acceleration_state.resize(m->nq, 0.0);
     time_state.resize(m->nq, 0.0);
-    joint_positions_input.resize(m->nq, 0.2);
+    joint_positions_input.resize(m->nq, 0.0);
     joint_velocity_input.resize(m->nq, 0.0);
     joint_acceleration_input.resize(m->nq, 0.0);
 
@@ -178,17 +179,18 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
   }
 }
 
-void MujocoInitLoadObjects::start_simulation()
+void MujocoInitLoadObjects::start_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands)
 {
   std::cout << std::flush << "Starting Simulation" << std::endl;
-  getInstance().starting_simulation();
+  getInstance().starting_simulation(joint_position_commands);
 }
 
-void MujocoInitLoadObjects::starting_simulation()
+void MujocoInitLoadObjects::starting_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands)
 { // check if valid model available
   
   std::unique_lock<std::mutex> lk(mut_ready);
   cv.wait(lk, []{ return ready; });
+
 
   std::cout <<std::flush<< "Simulation thread is starting the simulation\n";
   if (m)
@@ -242,7 +244,6 @@ void MujocoInitLoadObjects::starting_simulation()
       {
         mj_step(m, d);
       }
-
       
       // get framebuffer viewport
       mjrRect viewport = {0, 0, 0, 0};
@@ -259,13 +260,15 @@ void MujocoInitLoadObjects::starting_simulation()
       glfwPollEvents();
       if (!simulation_start)
       { 
-        std::cout<<std::flush<<"Unlocking and notifying";
+        std::cout<<std::flush<<"Unlocking and notifying"<<std::endl;
         simulation_start = true;
         processed = true;      
         lk.unlock();
         cv.notify_one();
       }
     }
+
+    DeleteData();
   }
 }
 void MujocoInitLoadObjects::DeleteData()
@@ -283,6 +286,7 @@ void MujocoInitLoadObjects::DeletingData()
   mj_deleteData(d);
   mj_deleteModel(m);
   glfwTerminate();
+  is_deleted = true;
 }
 } // namespace mujoco_with_ros2
 

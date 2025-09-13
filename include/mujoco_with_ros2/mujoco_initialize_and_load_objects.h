@@ -33,7 +33,7 @@
 #include "mujoco/mujoco.h"
 
 #include <rclcpp/rclcpp.hpp>
-//#include <realtime_tools/lock_free_queue.hpp>
+#include <realtime_tools/lock_free_queue.hpp>
 
 extern std::mutex mut_ready;
 extern std::condition_variable cv;
@@ -46,7 +46,10 @@ class MujocoInitLoadObjects
 {
 private:
   MujocoInitLoadObjects();
-
+  ~MujocoInitLoadObjects()
+  {
+    std::cout<<std::endl<<std::flush<<"Destroying the simulation object";
+  }
 public:
 
   std::shared_ptr<rclcpp::Node> m_node;
@@ -80,6 +83,8 @@ public:
   double lastx       = 0;
   double lasty       = 0;
 
+  //multi threading requirements 
+  bool is_deleted = false;
   //Buffers for interaction with ROS2 Hardware_interface
   //Joint states
   std::vector<double> joint_positions_state;
@@ -100,8 +105,8 @@ public:
   mjModel* initialize_simulation();
 
   //Start Simulation loop and launch the rendering window
-  static void start_simulation();
-  void starting_simulation();
+  static void start_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands);
+  void starting_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands);
 
   // Keyboard callback
   // static void keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods);

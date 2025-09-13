@@ -20,6 +20,7 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include <realtime_tools/lock_free_queue.hpp>
 
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
@@ -75,14 +76,13 @@ protected:
   std::vector<double> joint_pos_vector_;
   std::vector<double> joint_vel_vector_;
   std::vector<double> joint_eff_vector_;
-
+  realtime_tools::LockFreeQueueBase<double,boost::lockfree::spsc_queue<double>> joint_position_commands{6};
   std::vector<double> joint_command_pos_vector_;
   std::vector<double> joint_command_vel_vector_;
   std::vector<double> joint_command_eff_vector_;
 
 public:
   mjModel* current_robot_model;
-  std::shared_ptr<mujoco_with_ros2::MujocoInitLoadObjects> loaded_object_simulation;
   std::unique_ptr<std::thread> thread_ptr;
 };
 

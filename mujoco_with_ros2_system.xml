@@ -1,0 +1,6 @@
+<library path="mujoco_with_ros2">
+  <class name="mujoco_with_ros2/MujocowithRos2SystemHardware"
+    type="mujoco_with_ros2::MujocowithRos2SystemHardware"
+    base_class_type="hardware_interface::SystemInterface">
+  </class>
+</library>

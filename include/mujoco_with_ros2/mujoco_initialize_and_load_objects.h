@@ -15,12 +15,15 @@
 // and setup
 
 #pragma once
+#ifndef MUJOCO_LOAD_AND_INITIALIZE_OBJECTS_H
+#define MUJOCO_LOAD_AND_INITIALIZE_OBJECTS_H
 
 #include <array>
 #include <atomic>
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <condition_variable>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -30,23 +33,35 @@
 #include "mujoco/mujoco.h"
 
 #include <rclcpp/rclcpp.hpp>
+//#include <realtime_tools/lock_free_queue.hpp>
+
+extern std::mutex mut_ready;
+extern std::condition_variable cv;
+extern bool ready;
+extern bool processed;
+
 namespace mujoco_with_ros2 {
 
 class MujocoInitLoadObjects
 {
 private:
   MujocoInitLoadObjects();
+
+public:
+
+  std::shared_ptr<rclcpp::Node> m_node;
   static MujocoInitLoadObjects& getInstance()
   {
     static MujocoInitLoadObjects load_objects_simulation;
     return load_objects_simulation;
   }
 
-public:
   MujocoInitLoadObjects(const MujocoInitLoadObjects&)            = delete;
   MujocoInitLoadObjects& operator=(const MujocoInitLoadObjects&) = delete;
   MujocoInitLoadObjects(MujocoInitLoadObjects&&)                 = delete;
   MujocoInitLoadObjects& operator=(MujocoInitLoadObjects&&)      = delete;
+
+  static std::shared_ptr<rclcpp::Node> getNode() { return getInstance().m_node; };
 
   // MuJoCo data structures
   mjSpec* spec = NULL; // MuJoCo Spec
@@ -65,12 +80,12 @@ public:
   double lastx       = 0;
   double lasty       = 0;
 
-  //Buffers for interaction with ROS2 Hardware_interface_Interaction
+  //Buffers for interaction with ROS2 Hardware_interface
   //Joint states
   std::vector<double> joint_positions_state;
   std::vector<double> joint_velocity_state;
   std::vector<double> joint_acceleration_state;
-  
+  std::vector<double> time_state;
   //Joint Inputs
   std::vector<double> joint_positions_input;
   std::vector<double> joint_velocity_input;
@@ -115,3 +130,5 @@ public:
 
 
 } // namespace mujoco_with_ros2
+
+#endif

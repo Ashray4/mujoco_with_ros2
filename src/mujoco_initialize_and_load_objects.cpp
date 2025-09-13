@@ -18,6 +18,11 @@
 #include <random>
 #include <vector>
 
+std::mutex mut_ready;
+std::condition_variable cv;
+bool ready = false;
+bool processed = false;
+
 namespace mujoco_with_ros2 {
 
 MujocoInitLoadObjects::MujocoInitLoadObjects() {}
@@ -110,13 +115,18 @@ void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
   getInstance().controlCBImpl(m, d);
 }
 void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
-{ 
-  
+{
   // Check if controls are equal
-   for (int i = 0; i < m->nq; ++i)
-        {
-            d->ctrl[i] = 0.0;                                                                                                                              
-        }
+  for (int i = 0; i < m->nq; ++i)
+  {
+    d->ctrl[i]                  = joint_positions_input[i];
+    joint_positions_state[i]    = *d->qpos;
+    joint_velocity_state[i]     = *d->qvel;
+    joint_acceleration_state[i] = *d->act;
+    time_state[i]               = d->time;
+    // joint_velocity_state[i] = d->qpvel
+    // joint_acceleration_state = d->q
+  }
 }
 mjModel* MujocoInitLoadObjects::init()
 {
@@ -142,12 +152,21 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
     }
 
     // To:Do Possible Object creation and spec editing here
-    
+
     spec->option.disableactuator = 1;
     spec->option.disableactuator = 2;
-    
+
     m = mj_compile(spec, NULL);
     d = mj_makeData(m);
+
+    // Initialize the buffers
+    joint_positions_state.resize(m->nq, 0.0);
+    joint_velocity_state.resize(m->nq, 0.0);
+    joint_acceleration_state.resize(m->nq, 0.0);
+    time_state.resize(m->nq, 0.0);
+    joint_positions_input.resize(m->nq, 0.2);
+    joint_velocity_input.resize(m->nq, 0.0);
+    joint_acceleration_input.resize(m->nq, 0.0);
 
     std::cout << std::flush << "Simulation Initialized" << std::endl;
     return m;
@@ -166,7 +185,12 @@ void MujocoInitLoadObjects::start_simulation()
 }
 
 void MujocoInitLoadObjects::starting_simulation()
-{ //check if valid model available
+{ // check if valid model available
+  
+  std::unique_lock<std::mutex> lk(mut_ready);
+  cv.wait(lk, []{ return ready; });
+
+  std::cout <<std::flush<< "Simulation thread is starting the simulation\n";
   if (m)
   {
     /* code */
@@ -205,6 +229,8 @@ void MujocoInitLoadObjects::starting_simulation()
     // ... install GLFW keyboard and mouse callbacks
 
     // run main loop, target real-time simulation and 60 fps rendering
+
+    bool simulation_start = false;
     while (!glfwWindowShouldClose(window))
     {
       // advance interactive simulation for 1/60 sec
@@ -217,6 +243,7 @@ void MujocoInitLoadObjects::starting_simulation()
         mj_step(m, d);
       }
 
+      
       // get framebuffer viewport
       mjrRect viewport = {0, 0, 0, 0};
       glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
@@ -230,6 +257,14 @@ void MujocoInitLoadObjects::starting_simulation()
 
       // process pending GUI events, call GLFW callbacks
       glfwPollEvents();
+      if (!simulation_start)
+      { 
+        std::cout<<std::flush<<"Unlocking and notifying";
+        simulation_start = true;
+        processed = true;      
+        lk.unlock();
+        cv.notify_one();
+      }
     }
   }
 }
@@ -253,16 +288,16 @@ void MujocoInitLoadObjects::DeletingData()
 
 // Should be a global main so that the linker finds it, inside the namespace it represents that
 // namespace
-int main()
-{
-  // call the static function here
-  mujoco_with_ros2::MujocoInitLoadObjects::init();
+// int main()
+// { 
+//   // call the static function here
+//   mujoco_with_ros2::MujocoInitLoadObjects::init();
 
-  // start Simulation and visualization
-  mujoco_with_ros2::MujocoInitLoadObjects::start_simulation();
+//   // start Simulation and visualization
+//   mujoco_with_ros2::MujocoInitLoadObjects::start_simulation();
 
-  // delete data
-  mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
+//   // delete data
+//   mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
 
-  return 0;
-}
+//   return 0;
+// }

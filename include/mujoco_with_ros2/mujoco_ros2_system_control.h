@@ -1,6 +1,7 @@
 
-#ifndef J1000_MODBUS_SYSTEM_H
-#define J1000_MODBUS_SYSTEM_H
+#pragma once
+#ifndef MUJOCO_ROS2_SYSTEM_H
+#define MUJOCO_ROS2_SYSTEM_H
 
 #include <bitset>
 #include <chrono>
@@ -10,6 +11,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <thread>
 
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
@@ -33,14 +36,7 @@
 using namespace std;
 
 namespace mujoco_with_ros2 {
-struct Config
-{
-  int baud_rate;
-  std::string port_name;
-  std::string name;
-  double write_velocity;
-  std::string joint_name;
-};
+
 class MujocowithRos2SystemHardware : public hardware_interface::SystemInterface
 {
   virtual ~MujocowithRos2SystemHardware();
@@ -76,13 +72,18 @@ public:
   write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
 protected:
- std::vector<double>joint_pos_vector_;
- std::vector<double>joint_vel_vector_;
- std::vector<double>joint_eff_vector_;
- 
+  std::vector<double> joint_pos_vector_;
+  std::vector<double> joint_vel_vector_;
+  std::vector<double> joint_eff_vector_;
+
+  std::vector<double> joint_command_pos_vector_;
+  std::vector<double> joint_command_vel_vector_;
+  std::vector<double> joint_command_eff_vector_;
+
 public:
- mjModel* current_robot_model;
- std::shared_ptr<mujoco_with_ros2::MujocoInitLoadObjects> loaded_object_simulation;
+  mjModel* current_robot_model;
+  std::shared_ptr<mujoco_with_ros2::MujocoInitLoadObjects> loaded_object_simulation;
+  std::unique_ptr<std::thread> thread_ptr;
 };
 
 } // namespace mujoco_with_ros2

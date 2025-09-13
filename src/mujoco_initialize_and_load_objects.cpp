@@ -158,6 +158,7 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
     spec->option.disableactuator = 2;
 
     m = mj_compile(spec, NULL);
+    m->opt.timestep = 0.002;
     d = mj_makeData(m);
 
     // Initialize the buffers

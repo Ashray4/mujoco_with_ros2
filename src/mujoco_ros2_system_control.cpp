@@ -1,5 +1,8 @@
 #include <mujoco_with_ros2/mujoco_ros2_system_control.h>
-
+// add another class to manage the communication via named interfaces like command interfaces for mujoco
+//make the update rate same
+//add publishers and ros2 nodes and services for teleoperation and objects
+//try interactive markers in mujoco(teleoperation)
 
 namespace mujoco_with_ros2 {
 

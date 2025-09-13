@@ -229,10 +229,10 @@ MujocowithRos2SystemHardware::on_deactivate(const rclcpp_lifecycle::State& /*pre
 hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp::Time& /*time*/,
                                                                    const rclcpp::Duration& period)
 { 
-  
-  // joint_pos_vector_ = loaded_object_simulation->joint_positions_state;
-  // joint_vel_vector_ = loaded_object_simulation->joint_velocity_state;
-  // joint_eff_vector_ = loaded_object_simulation->joint_acceleration_state;
+  auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
+  joint_pos_vector_ = loaded_object_simulation.joint_positions_state;
+  joint_vel_vector_ = loaded_object_simulation.joint_velocity_state;
+  joint_eff_vector_ = loaded_object_simulation.joint_acceleration_state;
   return hardware_interface::return_type::OK;
 }
 
@@ -244,7 +244,7 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
   auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
   for (size_t i = 0; i < current_robot_model->nq; i++)
   {
-   loaded_object_simulation.joint_positions_input[i] = -1.0;
+   loaded_object_simulation.joint_positions_input[i] = joint_command_pos_vector_[i];
   }
   
   return hardware_interface::return_type::OK;

@@ -61,6 +61,7 @@ def generate_launch_description():
     # Controllers to spawn
     controllers = [
         "joint_state_broadcaster",
+        "interpolation_controller"
     ]
 
     spawner_nodes = [

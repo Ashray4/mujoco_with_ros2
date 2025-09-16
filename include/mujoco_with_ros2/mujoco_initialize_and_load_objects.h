@@ -85,6 +85,7 @@ public:
 
   //multi threading requirements 
   bool is_deleted = false;
+  
   //Buffers for interaction with ROS2 Hardware_interface
   //Joint states
   std::vector<double> joint_positions_state;
@@ -96,6 +97,9 @@ public:
   std::vector<double> joint_velocity_input;
   std::vector<double> joint_acceleration_input;
   
+  //Joint Names
+  std::vector<std::string> ur5e_joint_names;
+
   //(To Review maybe a better way (Singleton Class))
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
@@ -105,8 +109,8 @@ public:
   mjModel* initialize_simulation();
 
   //Start Simulation loop and launch the rendering window
-  static void start_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands);
-  void starting_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands);
+  static void start_simulation(bool single_thread = false);
+  void starting_simulation(bool single_thread = false);
 
   // Keyboard callback
   // static void keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods);

@@ -76,7 +76,6 @@ protected:
   std::vector<double> joint_pos_vector_;
   std::vector<double> joint_vel_vector_;
   std::vector<double> joint_eff_vector_;
-  realtime_tools::LockFreeQueueBase<double,boost::lockfree::spsc_queue<double>> joint_position_commands{6};
   std::vector<double> joint_command_pos_vector_;
   std::vector<double> joint_command_vel_vector_;
   std::vector<double> joint_command_eff_vector_;

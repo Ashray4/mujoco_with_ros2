@@ -1,8 +1,10 @@
 #include <mujoco_with_ros2/mujoco_ros2_system_control.h>
-// add another class to manage the communication via named interfaces like command interfaces for mujoco
-//make the update rate same
-//add publishers and ros2 nodes and services for teleoperation and objects
-//try interactive markers in mujoco(teleoperation)
+// add another class to manage the communication via named interfaces like command interfaces for
+// mujoco
+// states are not being published
+// make the update rate same
+// add publishers and ros2 nodes and services for teleoperation and objects
+// try interactive markers in mujoco(teleoperation)
 
 namespace mujoco_with_ros2 {
 
@@ -15,8 +17,6 @@ MujocowithRos2SystemHardware::~MujocowithRos2SystemHardware()
 hardware_interface::CallbackReturn
 MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& info)
 {
-  
-
   if (hardware_interface::SystemInterface::on_init(info) !=
       hardware_interface::CallbackReturn::SUCCESS)
 
@@ -33,18 +33,17 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   joint_command_vel_vector_.resize(info.joints.size(), 0.0);
   joint_command_eff_vector_.resize(info.joints.size(), 0.0);
 
-  //initialize simulation
-  auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
-  current_robot_model = loaded_object_simulation.init();
-  
+  // initialize simulation
+  current_robot_model = mujoco_with_ros2::MujocoInitLoadObjects::getInstance().init();
+
   for (size_t i = 0; i < info_.joints.size(); i++)
   {
-    std::cout<<info_.joints[i].name.c_str()<<std::endl;
+    std::cout << info_.joints[i].name.c_str() << std::endl;
   }
 
   // for (const hardware_interface::ComponentInfo& joint : info_.joints)
-  // { 
-    
+  // {
+
   //   // if (joint.command_interfaces.size() != 3)
   //   // {
   //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
@@ -151,11 +150,11 @@ MujocowithRos2SystemHardware::export_command_interfaces()
   for (size_t i = 0; i < info_.joints.size(); ++i)
   {
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION,&joint_command_pos_vector_[i]));
+      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &joint_command_pos_vector_[i]));
 
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
       info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &joint_command_vel_vector_[i]));
-    
+
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
       info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_command_eff_vector_[i]));
   }
@@ -168,8 +167,8 @@ MujocowithRos2SystemHardware::on_configure(const rclcpp_lifecycle::State& /*prev
 {
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Configuring ...please wait...");
 
-  //Initialize simulation with initial joint state
-  
+  // Initialize simulation with initial joint state
+
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully configured!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -195,25 +194,27 @@ hardware_interface::CallbackReturn
 MujocowithRos2SystemHardware::on_activate(const rclcpp_lifecycle::State& /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Activating ...please wait...");
-  //start the process in another thread
-  thread_ptr = std::unique_ptr<std::thread>(new std::thread(mujoco_with_ros2::MujocoInitLoadObjects::start_simulation,std::ref(joint_position_commands)));
-  
-  //lock the thread and ask the simulation thread to start
+  // start the process in another thread
+  bool single_thread = false;
+  thread_ptr = std::unique_ptr<std::thread>(new std::thread(
+    mujoco_with_ros2::MujocoInitLoadObjects::start_simulation, std::ref(single_thread)));
+
+  // lock the thread and ask the simulation thread to start
   {
-  std::lock_guard<std::mutex> lk(mut_ready);
-  ready = true;
-  std::cout<<"Initializing simulation on the thread id: "<<thread_ptr->get_id()<<'\n';
+    std::lock_guard<std::mutex> lk(mut_ready);
+    ready = true;
+    std::cout << "Initializing simulation on the thread id: " << thread_ptr->get_id() << '\n';
   }
   cv.notify_one();
-  
-    // wait for the Simulation-thread to start the simulation
-    {
-        std::unique_lock<std::mutex> lk(mut_ready);
-        cv.wait(lk, []{ return processed; });
-    }
+
+  // wait for the Simulation-thread to start the simulation
+  {
+    std::unique_lock<std::mutex> lk(mut_ready);
+    cv.wait(lk, [] { return processed; });
+  }
   std::cout << "Simulation has been initialized" << '\n';
 
-  
+
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -231,25 +232,35 @@ MujocowithRos2SystemHardware::on_deactivate(const rclcpp_lifecycle::State& /*pre
 
 hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp::Time& /*time*/,
                                                                    const rclcpp::Duration& period)
-{ 
+{
   auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
-  joint_pos_vector_ = loaded_object_simulation.joint_positions_state;
-  joint_vel_vector_ = loaded_object_simulation.joint_velocity_state;
-  joint_eff_vector_ = loaded_object_simulation.joint_acceleration_state;
+  if (!loaded_object_simulation.is_deleted)
+  {
+    for (size_t i = 0; i < current_robot_model->nq; i++)
+    {
+      joint_pos_vector_[i] = loaded_object_simulation.joint_positions_state[i];
+      joint_vel_vector_[i] = loaded_object_simulation.joint_velocity_state[i];
+      joint_eff_vector_[i] = loaded_object_simulation.joint_acceleration_state[i];
+    }
+    //std::cout<<loaded_object_simulation.joint_positions_state.size()<<std::flush<<std::endl;
+  }
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type
 MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
                                     const rclcpp::Duration& /*period*/)
-{ 
-  //add a check to stop sending values in case simulation stops 
+{
+  // add a check to stop sending values in case simulation stops
   auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
-  for (size_t i = 0; i < current_robot_model->nq; i++)
+  if (!loaded_object_simulation.is_deleted)
   {
-   loaded_object_simulation.joint_positions_input[i] = joint_command_pos_vector_[i];
+    for (size_t i = 0; i < current_robot_model->nq; i++)
+    {
+      loaded_object_simulation.joint_positions_input[i] = joint_command_pos_vector_[i];
+    }
   }
-  
+
   return hardware_interface::return_type::OK;
 }
 

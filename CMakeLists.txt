@@ -8,7 +8,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-  hardware_interface pluginlib rclcpp rclcpp_lifecycle realtime_tools
+  hardware_interface pluginlib rclcpp rclcpp_lifecycle realtime_tools Boost
 )
 foreach(dep IN LISTS THIS_PACKAGE_INCLUDE_DEPENDS)
   find_package(${dep} REQUIRED)
@@ -66,6 +66,24 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE MUJOCO_WITH_ROS2_SYSTEM_BUILD
 
 pluginlib_export_plugin_description_file(hardware_interface mujoco_with_ros2_system.xml)
 
+add_executable(${PROJECT_NAME}_simulator_test
+src/robot_mujoco_simulator.cpp)
+
+target_include_directories(${PROJECT_NAME}_simulator_test PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/mujoco_with_ros2>
+    ${MUJOCO_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} mujoco_with_ros2
+)
+target_link_libraries(${PROJECT_NAME}_simulator_test PUBLIC
+    ${PROJECT_NAME}  # This links to your main library
+    ${MUJOCO_LIBRARIES} 
+    ${GLFW_LIBRARIES} 
+    GLEW::GLEW
+)
+
+ament_target_dependencies(${PROJECT_NAME}_simulator_test PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+
 # ===================================================================
 # Install & export
 # ===================================================================
@@ -79,6 +97,10 @@ install(TARGETS
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+install(TARGETS
+${PROJECT_NAME}_simulator_test
+DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_export_include_directories(include)

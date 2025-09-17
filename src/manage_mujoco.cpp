@@ -34,10 +34,10 @@ void ManageMujoco::initialize_queues()
 
   for (int i = 0; i < n_joints_; i++)
   {
-    joint_commands_.emplace_back(std::make_unique<Queue>(queue_size_));
-    joint_pos_states_.emplace_back(std::make_unique<Queue>(queue_size_));
-    joint_vel_states_.emplace_back(std::make_unique<Queue>(queue_size_));
-    joint_eff_states_.emplace_back(std::make_unique<Queue>(queue_size_));
+    joint_commands_.emplace_back(std::make_unique<QueueType>(queue_size_));
+    joint_pos_states_.emplace_back(std::make_unique<QueueType>(queue_size_));
+    joint_vel_states_.emplace_back(std::make_unique<QueueType>(queue_size_));
+    joint_eff_states_.emplace_back(std::make_unique<QueueType>(queue_size_));
     mujoco_joint_ids_.push_back(
       mj_name2id(mujoco_model_, mjOBJ_JOINT, mujoco_joint_names_[i].c_str()));
   }

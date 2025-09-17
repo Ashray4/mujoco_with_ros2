@@ -11,8 +11,8 @@
 namespace mujoco_with_ros2 {
 class ManageMujoco
 {
-  using Queue = std::unique_ptr<
-    realtime_tools::LockFreeQueueBase<double, boost::lockfree::spsc_queue<double> > >;
+  using QueueType = realtime_tools::LockFreeQueueBase<double, boost::lockfree::spsc_queue<double> >;
+  using QueuePtr  = std::unique_ptr<QueueType>;
 
 private:
   // command and state values
@@ -41,12 +41,15 @@ public:
 
   bool check_for_instance();
   void delete_simulation();
+  
+  bool get_mujoco_state();
+  bool set_mujoco_command();
 
   MujocoInitLoadObjects& load_mujoco_object_simulation_;
   mjModel* mujoco_model_;
-  std::vector<Queue> joint_commands_;
-  std::vector<Queue> joint_pos_states_;
-  std::vector<Queue> joint_vel_states_;
-  std::vector<Queue> joint_eff_states_;
+  std::vector<QueuePtr> joint_commands_;
+  std::vector<QueuePtr> joint_pos_states_;
+  std::vector<QueuePtr> joint_vel_states_;
+  std::vector<QueuePtr> joint_eff_states_;
 };
 } // namespace mujoco_with_ros2

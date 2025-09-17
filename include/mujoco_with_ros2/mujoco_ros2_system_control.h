@@ -1,38 +1,39 @@
 
 #pragma once
 #ifndef MUJOCO_ROS2_SYSTEM_H
-#define MUJOCO_ROS2_SYSTEM_H
+#  define MUJOCO_ROS2_SYSTEM_H
 
-#include <bitset>
-#include <chrono>
-#include <cmath>
-#include <cstddef>
-#include <limits>
-#include <memory>
-#include <string>
-#include <vector>
-#include <mutex>
-#include <thread>
+#  include <bitset>
+#  include <chrono>
+#  include <cmath>
+#  include <cstddef>
+#  include <limits>
+#  include <memory>
+#  include <mutex>
+#  include <string>
+#  include <thread>
+#  include <vector>
 
-#include "rclcpp/clock.hpp"
-#include "rclcpp/duration.hpp"
-#include "rclcpp/macros.hpp"
-#include "rclcpp/time.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "rclcpp_lifecycle/state.hpp"
-#include <realtime_tools/lock_free_queue.hpp>
+#  include "rclcpp/clock.hpp"
+#  include "rclcpp/duration.hpp"
+#  include "rclcpp/macros.hpp"
+#  include "rclcpp/time.hpp"
+#  include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#  include "rclcpp_lifecycle/state.hpp"
+#  include <realtime_tools/lock_free_queue.hpp>
 
-#include "hardware_interface/handle.hpp"
-#include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/system_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
+#  include "hardware_interface/handle.hpp"
+#  include "hardware_interface/hardware_info.hpp"
+#  include "hardware_interface/system_interface.hpp"
+#  include "hardware_interface/types/hardware_interface_return_values.hpp"
+#  include "hardware_interface/types/hardware_interface_type_values.hpp"
 
-#include "mujoco_with_ros2/mujoco_initialize_and_load_objects.h"
-#include "mujoco_with_ros2/visibility_control.h"
+#  include "mujoco_with_ros2/manage_mujoco.h"
+#  include "mujoco_with_ros2/mujoco_initialize_and_load_objects.h"
+#  include "mujoco_with_ros2/visibility_control.h"
 
-#include "GLFW/glfw3.h"
-#include "mujoco/mujoco.h"
+#  include "GLFW/glfw3.h"
+#  include "mujoco/mujoco.h"
 
 using namespace std;
 
@@ -79,10 +80,12 @@ protected:
   std::vector<double> joint_command_pos_vector_;
   std::vector<double> joint_command_vel_vector_;
   std::vector<double> joint_command_eff_vector_;
-
+  
 public:
   mjModel* current_robot_model;
-  std::unique_ptr<std::thread> thread_ptr;
+  std::unique_ptr<ManageMujoco> mujoco_manager;
+  std::vector<std::string> ur5e_joint_names;
+  
 };
 
 } // namespace mujoco_with_ros2

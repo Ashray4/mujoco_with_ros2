@@ -33,14 +33,22 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   joint_command_vel_vector_.resize(info.joints.size(), 0.0);
   joint_command_eff_vector_.resize(info.joints.size(), 0.0);
 
-  // initialize simulation
-  current_robot_model = mujoco_with_ros2::MujocoInitLoadObjects::getInstance().init();
 
+  // initialize simulation
+  ur5e_joint_names.resize(info.joints.size());
   for (size_t i = 0; i < info_.joints.size(); i++)
   {
-    std::cout << info_.joints[i].name.c_str() << std::endl;
+    ur5e_joint_names[i] = info_.joints[i].name;
   }
 
+  mujoco_manager     = std::make_unique<ManageMujoco>(6,ur5e_joint_names);
+  mujoco_manager->initialize_queues();
+  current_robot_model = mujoco_manager->mujoco_model_;
+  if (!mujoco_manager->joint_commands_[0])
+  {
+      std::cout<<std::endl<<std::flush<<"Hi i am a null pointer";
+  }
+  
   // for (const hardware_interface::ComponentInfo& joint : info_.joints)
   // {
 
@@ -184,7 +192,7 @@ MujocowithRos2SystemHardware::on_cleanup(const rclcpp_lifecycle::State& /*previo
   {
     mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
   }
-  thread_ptr->join();
+
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully cleaned up!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -194,27 +202,7 @@ hardware_interface::CallbackReturn
 MujocowithRos2SystemHardware::on_activate(const rclcpp_lifecycle::State& /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Activating ...please wait...");
-  // start the process in another thread
-  bool single_thread = false;
-  thread_ptr = std::unique_ptr<std::thread>(new std::thread(
-    mujoco_with_ros2::MujocoInitLoadObjects::start_simulation, std::ref(single_thread)));
-
-  // lock the thread and ask the simulation thread to start
-  {
-    std::lock_guard<std::mutex> lk(mut_ready);
-    ready = true;
-    std::cout << "Initializing simulation on the thread id: " << thread_ptr->get_id() << '\n';
-  }
-  cv.notify_one();
-
-  // wait for the Simulation-thread to start the simulation
-  {
-    std::unique_lock<std::mutex> lk(mut_ready);
-    cv.wait(lk, [] { return processed; });
-  }
-  std::cout << "Simulation has been initialized" << '\n';
-
-
+  mujoco_manager->launch_simulation();
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -242,7 +230,7 @@ hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp:
       joint_vel_vector_[i] = loaded_object_simulation.joint_velocity_state[i];
       joint_eff_vector_[i] = loaded_object_simulation.joint_acceleration_state[i];
     }
-    //std::cout<<loaded_object_simulation.joint_positions_state.size()<<std::flush<<std::endl;
+    // std::cout<<loaded_object_simulation.joint_positions_state.size()<<std::flush<<std::endl;
   }
   return hardware_interface::return_type::OK;
 }

@@ -48,7 +48,8 @@ set(MUJOCO_LIBRARIES    ${MUJOCO_DIR}/lib/libmujoco.so)
 # 2) Hardware-interface plugin library
 # ===================================================================
 add_library(${PROJECT_NAME} SHARED
-src/mujoco_initialize_and_load_objects.cpp  
+src/mujoco_initialize_and_load_objects.cpp
+src/manage_mujoco.cpp  
 src/mujoco_ros2_system_control.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC

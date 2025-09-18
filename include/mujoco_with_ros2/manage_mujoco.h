@@ -1,4 +1,5 @@
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <mujoco_with_ros2/mujoco_initialize_and_load_objects.h>
@@ -21,8 +22,9 @@ private:
   std::vector<int> mujoco_joint_ids_;
 
   // Mujoco Simulation Variables
-  mjData* mujoco_data_;
   size_t queue_size_;
+
+
   // thread parameters
   std::unique_ptr<std::thread> thread_ptr;
 
@@ -34,19 +36,23 @@ public:
 
   int totalJoints();
 
+  mjModel* initialize_mujoco_model();
   const std::vector<std::string>& getJointNames();
+  const std::vector<int>& getJointIds();
 
   void initialize_queues();
   void launch_simulation(bool single_thread = false);
 
   bool check_for_instance();
   void delete_simulation();
-  
-  bool get_mujoco_state();
-  bool set_mujoco_command();
+
+  // MuJoCo data structures
+  mjSpec* mujoco_spec = NULL; // MuJoCo Spec
+  mjModel* mujoco_model   = NULL; // MuJoCo model
+  mjData* mujoco_data    = NULL; // MuJoCo data
 
   MujocoInitLoadObjects& load_mujoco_object_simulation_;
-  mjModel* mujoco_model_;
+
   std::vector<QueuePtr> joint_commands_;
   std::vector<QueuePtr> joint_pos_states_;
   std::vector<QueuePtr> joint_vel_states_;

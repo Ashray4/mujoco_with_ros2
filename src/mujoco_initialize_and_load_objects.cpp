@@ -25,7 +25,22 @@ bool processed = false;
 
 namespace mujoco_with_ros2 {
 
-MujocoInitLoadObjects::MujocoInitLoadObjects()
+MujocoInitLoadObjects::MujocoInitLoadObjects(mjModel* m_,
+                                             mjData* d_,
+                                             std::vector<QueuePtr>& joint_commands_,
+                                             std::vector<QueuePtr>& joint_pos_states_,
+                                             std::vector<QueuePtr>& joint_vel_states_,
+                                             std::vector<QueuePtr>& joint_eff_states_,
+                                             const std::vector<int>& joint_ids_,
+                                             bool single_thread = false)
+  : m(m_)
+  , d(d_)
+  , joint_commands_(joint_commands_)
+  , joint_pos_states_(joint_pos_states_)
+  , joint_vel_states_(joint_vel_states_)
+  , joint_eff_states_(joint_eff_states_)
+  , ur5e_joint_ids(joint_ids_)
+  ,single_thread(single_thread)
 {
   ur5e_joint_names = {"shoulder_pan_joint",
                       "shoulder_lift_joint",
@@ -129,11 +144,15 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
   // std::cout << std::endl<<m->nu<<std::endl<<std::flush;
   // std::cout << std::endl<<d->ctrl<<std::endl<<std::flush;
 
+  if ()
+  {
+    /* code */
+  }
 
   for (int i = 0; i < 6; ++i)
   {
     d->ctrl[i]                  = joint_positions_input[i];
-    int joint_id = mj_name2id(m, mjOBJ_JOINT, ur5e_joint_names[i].c_str());
+    int joint_id                = mj_name2id(m, mjOBJ_JOINT, ur5e_joint_names[i].c_str());
     joint_positions_state[i]    = d->qpos[m->jnt_qposadr[joint_id]];
     joint_velocity_state[i]     = d->qvel[m->jnt_dofadr[joint_id]];
     joint_acceleration_state[i] = d->act[m->jnt_dofadr[joint_id]];
@@ -199,13 +218,35 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
   }
 }
 
-void MujocoInitLoadObjects::start_simulation(bool single_thread)
+void MujocoInitLoadObjects::start_simulation(const std::vector<int>& joint_ids_, bool single_thread)
 {
-  std::cout << std::flush << "Starting Simulation" << std::endl;
-  getInstance().starting_simulation(single_thread);
+  static std::vector<QueuePtr> empty_vector{};
+  start_simulation(
+    empty_vector, empty_vector, empty_vector, empty_vector, joint_ids_, single_thread);
 }
 
-void MujocoInitLoadObjects::starting_simulation(bool single_thread)
+void MujocoInitLoadObjects::start_simulation(std::vector<QueuePtr>& joint_commands_,
+                                             std::vector<QueuePtr>& joint_pos_states_,
+                                             std::vector<QueuePtr>& joint_vel_states_,
+                                             std::vector<QueuePtr>& joint_eff_states_,
+                                             const std::vector<int>& joint_ids_,
+                                             bool single_thread)
+{
+  std::cout << std::flush << "Starting Simulation" << std::endl;
+  getInstance().starting_simulation(joint_commands_,
+                                    joint_pos_states_,
+                                    joint_vel_states_,
+                                    joint_eff_states_,
+                                    joint_ids_,
+                                    single_thread);
+}
+
+void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_commands_,
+                                                std::vector<QueuePtr>& joint_pos_states_,
+                                                std::vector<QueuePtr>& joint_vel_states_,
+                                                std::vector<QueuePtr>& joint_eff_states_,
+                                                const std::vector<int>& joint_ids_,
+                                                bool single_thread)
 { // check if valid model available
 
   std::unique_lock<std::mutex> lk(mut_ready);
@@ -224,6 +265,9 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
     {
       mju_error("Could not initialize GLFW");
     }
+
+    // Initialize vectors and states
+    ur5e_joint_ids = joint_ids_;
 
     // create window, make OpenGL context current, request v-sync
     GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);

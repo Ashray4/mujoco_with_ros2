@@ -106,6 +106,8 @@
         "variant": "cpp",
         "__nullptr": "cpp",
         "filesystem": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp"
     }
 }

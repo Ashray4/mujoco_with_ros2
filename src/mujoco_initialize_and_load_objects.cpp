@@ -25,37 +25,41 @@ bool processed = false;
 
 namespace mujoco_with_ros2 {
 
-MujocoInitLoadObjects::MujocoInitLoadObjects(mjModel* m_,
-                                             mjData* d_,
-                                             std::vector<QueuePtr>& joint_commands_,
+
+std::atomic_bool MujocoInitLoadObjects::alive_{false};
+MujocoInitLoadObjects::MujocoInitLoadObjects(std::vector<QueuePtr>& joint_commands_,
                                              std::vector<QueuePtr>& joint_pos_states_,
                                              std::vector<QueuePtr>& joint_vel_states_,
                                              std::vector<QueuePtr>& joint_eff_states_,
                                              const std::vector<int>& joint_ids_,
                                              bool single_thread = false)
-  : m(m_)
-  , d(d_)
-  , joint_commands_(joint_commands_)
+  : joint_commands_(joint_commands_)
   , joint_pos_states_(joint_pos_states_)
   , joint_vel_states_(joint_vel_states_)
   , joint_eff_states_(joint_eff_states_)
   , ur5e_joint_ids(joint_ids_)
-  ,single_thread(single_thread)
+  , single_thread(single_thread)
 {
-  ur5e_joint_names = {"shoulder_pan_joint",
-                      "shoulder_lift_joint",
-                      "elbow_joint",
-                      "wrist_1_joint",
-                      "wrist_2_joint",
-                      "wrist_3_joint"};
+  bool expected = false;
+  loaded_object_instance_ = this;
+  if (!alive_.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
+    throw std::runtime_error("Only one Mujoco Simulation may exist at a time");
+}
+MujocoInitLoadObjects::~MujocoInitLoadObjects()
+{
+  alive_.store(false, std::memory_order_release);
 }
 
 // mouse button callback
-void MujocoInitLoadObjects::mouseButtonCB(GLFWwindow* window, int button, int act, int mods)
+void MujocoInitLoadObjects::addCallbacks()
 {
-  getInstance().mouseButtonCBImpl(window, button, act, mods);
-}
+  // g_self = this;
+  // glfwSetMouseButtonCallback(window_, mouseButtonCB);
+  // glfwSetCursorPosCallback(window_, mouseMoveCB);
+  // glfwSetScrollCallback(window_, scrollCB);
 
+  mjcb_control = controlCB;
+}
 void MujocoInitLoadObjects::mouseButtonCBImpl(GLFWwindow* window,
                                               [[maybe_unused]] int button,
                                               [[maybe_unused]] int act,
@@ -70,12 +74,6 @@ void MujocoInitLoadObjects::mouseButtonCBImpl(GLFWwindow* window,
   glfwGetCursorPos(window, &lastx, &lasty);
 }
 
-
-// mouse move callback
-void MujocoInitLoadObjects::mouseMoveCB(GLFWwindow* window, double xpos, double ypos)
-{
-  getInstance().mouseMoveCBImpl(window, xpos, ypos);
-}
 
 void MujocoInitLoadObjects::mouseMoveCBImpl(GLFWwindow* window, double xpos, double ypos)
 {
@@ -119,12 +117,6 @@ void MujocoInitLoadObjects::mouseMoveCBImpl(GLFWwindow* window, double xpos, dou
 }
 
 
-// scroll callback
-void MujocoInitLoadObjects::scrollCB(GLFWwindow* window, double xoffset, double yoffset)
-{
-  getInstance().scrollCBImpl(window, xoffset, yoffset);
-}
-
 void MujocoInitLoadObjects::scrollCBImpl([[maybe_unused]] GLFWwindow* window,
                                          [[maybe_unused]] double xoffset,
                                          double yoffset)
@@ -133,21 +125,12 @@ void MujocoInitLoadObjects::scrollCBImpl([[maybe_unused]] GLFWwindow* window,
   mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
-{
-  getInstance().controlCBImpl(m, d);
-}
 void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
 {
   // Check if controls are equal
 
   // std::cout << std::endl<<m->nu<<std::endl<<std::flush;
   // std::cout << std::endl<<d->ctrl<<std::endl<<std::flush;
-
-  if ()
-  {
-    /* code */
-  }
 
   for (int i = 0; i < 6; ++i)
   {
@@ -167,10 +150,7 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
     // joint_acceleration_state = d->q
   }
 }
-mjModel* MujocoInitLoadObjects::init()
-{
-  return getInstance().initialize_simulation();
-}
+
 mjModel* MujocoInitLoadObjects::initialize_simulation()
 {
   // (Test) Load XML manually for now and test the model
@@ -218,35 +198,7 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
   }
 }
 
-void MujocoInitLoadObjects::start_simulation(const std::vector<int>& joint_ids_, bool single_thread)
-{
-  static std::vector<QueuePtr> empty_vector{};
-  start_simulation(
-    empty_vector, empty_vector, empty_vector, empty_vector, joint_ids_, single_thread);
-}
-
-void MujocoInitLoadObjects::start_simulation(std::vector<QueuePtr>& joint_commands_,
-                                             std::vector<QueuePtr>& joint_pos_states_,
-                                             std::vector<QueuePtr>& joint_vel_states_,
-                                             std::vector<QueuePtr>& joint_eff_states_,
-                                             const std::vector<int>& joint_ids_,
-                                             bool single_thread)
-{
-  std::cout << std::flush << "Starting Simulation" << std::endl;
-  getInstance().starting_simulation(joint_commands_,
-                                    joint_pos_states_,
-                                    joint_vel_states_,
-                                    joint_eff_states_,
-                                    joint_ids_,
-                                    single_thread);
-}
-
-void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_commands_,
-                                                std::vector<QueuePtr>& joint_pos_states_,
-                                                std::vector<QueuePtr>& joint_vel_states_,
-                                                std::vector<QueuePtr>& joint_eff_states_,
-                                                const std::vector<int>& joint_ids_,
-                                                bool single_thread)
+void MujocoInitLoadObjects::starting_simulation()
 { // check if valid model available
 
   std::unique_lock<std::mutex> lk(mut_ready);
@@ -266,12 +218,9 @@ void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_com
       mju_error("Could not initialize GLFW");
     }
 
-    // Initialize vectors and states
-    ur5e_joint_ids = joint_ids_;
-
     // create window, make OpenGL context current, request v-sync
-    GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
-    glfwMakeContextCurrent(window);
+    window_ = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
+    glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
 
     // initialize visualization data structures
@@ -287,10 +236,24 @@ void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_com
 
     // install GLFW mouse and keyboard callbacks
     // glfwSetKeyCallback(window, keyboardCB);
-    glfwSetMouseButtonCallback(window, mouseButtonCB);
-    glfwSetCursorPosCallback(window, mouseMoveCB);
-    glfwSetScrollCallback(window, scrollCB);
+    // glfwSetWindowUserPointer(window_, this);
+    // g_self = this;
+    glfwSetMouseButtonCallback(window_, mouseButtonCB);
+    glfwSetCursorPosCallback(window_, mouseMoveCB);
+    glfwSetScrollCallback(window_, scrollCB);
+    std::cout << std::flush << "No Problems untill callbacks\n";
+    
+    //addCallbacks();
 
+    if (!d)
+    {
+      std::cout << std::flush << "Problem here 4(null_ptr!!!!)\n";
+    }
+
+    else
+    {
+      std::cout << std::flush << "not null\n";
+    }
 
     mjcb_control = MujocoInitLoadObjects::controlCB;
 
@@ -299,51 +262,97 @@ void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_com
     // run main loop, target real-time simulation and 60 fps rendering
 
     bool simulation_start = false;
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window_))
     {
       // advance interactive simulation for 1/60 sec
       //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
       //  this loop will finish on time for the next frame to be rendered at 60 fps.
       //  Otherwise add a cpu timer and exit this loop when it is time to render.
-      mjtNum simstart = d->time;
-      while (d->time - simstart < 1.0 / 60.0)
+      try
       {
-        mj_step(m, d);
+        std::cout << std::flush << "No Problems untill loop\n";
+        if (!d)
+        {
+          std::cout << std::flush << "Problem here 4(null_ptr!!!!)\n";
+        }
+
+        mjtNum simstart = d->time;
+        std::cout << std::flush << "No Problems untill loop 5.1\n";
+
+        while (d->time - simstart < 1.0 / 60.0)
+        { 
+          std::cout << std::flush << "No Problems untill loop 5.2\n";
+          mj_step(m, d);
+          std::cout << std::flush << "No Problems untill loop 5.3\n";
+        }
+        std::cout << std::flush << "No Problems untill loop 5\n";
+        // get framebuffer viewport
+        mjrRect viewport = {0, 0, 0, 0};
+        glfwGetFramebufferSize(window_, &viewport.width, &viewport.height);
+
+        std::cout << std::flush << "No Problems untill loop 6\n";
+        // update scene and render
+        mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
+        mjr_render(viewport, &scn, &con);
+
+        std::cout << std::flush << "No Problems untill loop 7\n";
+        // swap OpenGL buffers (blocking call due to v-sync)
+        glfwSwapBuffers(window_);
+
+        std::cout << std::flush << "No Problems untill loop 8\n";
+
+        // // process pending GUI events, call GLFW callbacks
+        glfwPollEvents();
+
+        std::cout << std::flush << "No Problems untill loop 9\n";
+        if (!simulation_start && !single_thread)
+        {
+          std::cout << std::flush << "Unlocking and notifying" << std::endl;
+          simulation_start = true;
+          processed        = true;
+          lk.unlock();
+          cv.notify_one();
+        }
       }
-
-      // get framebuffer viewport
-      mjrRect viewport = {0, 0, 0, 0};
-      glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
-
-      // update scene and render
-      mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
-      mjr_render(viewport, &scn, &con);
-
-      // swap OpenGL buffers (blocking call due to v-sync)
-      glfwSwapBuffers(window);
-
-      // process pending GUI events, call GLFW callbacks
-      glfwPollEvents();
-      if (!simulation_start && !single_thread)
+      catch (const std::exception& e)
       {
-        std::cout << std::flush << "Unlocking and notifying" << std::endl;
-        simulation_start = true;
-        processed        = true;
-        lk.unlock();
-        cv.notify_one();
+        std::cerr << e.what() << '\n';
       }
     }
 
     if (!single_thread)
     {
-      DeleteData();
+      DeletingData();
     }
   }
 }
-void MujocoInitLoadObjects::DeleteData()
+
+void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
 {
-  std::cout << std::flush << "Cleaning up Simulation Data" << std::endl;
-  getInstance().DeletingData();
+    if (loaded_object_instance_) {
+        std::cout << std::flush << "g_self is valid, calling mouseButtonCBImpl..." << std::endl;
+        loaded_object_instance_->controlCBImpl(m, d);
+    }
+}
+//try with the obj reference thing
+void MujocoInitLoadObjects::mouseButtonCB(GLFWwindow* window, int button, int act, int mods)
+{
+    if (loaded_object_instance_) {
+        loaded_object_instance_->mouseButtonCBImpl(window, button,act,mods);
+    }
+}
+
+void MujocoInitLoadObjects::mouseMoveCB(GLFWwindow* window, double xpos, double ypos)
+{
+    if (loaded_object_instance_) {
+        std::cout<<std::flush<<std::endl<<loaded_object_instance_->is_deleted;
+    }
+}
+void MujocoInitLoadObjects::scrollCB(GLFWwindow* window, double xoffset, double yoffset)
+{
+    if (loaded_object_instance_) {
+        loaded_object_instance_->scrollCBImpl(window,xoffset,yoffset);
+    }
 }
 void MujocoInitLoadObjects::DeletingData()
 {

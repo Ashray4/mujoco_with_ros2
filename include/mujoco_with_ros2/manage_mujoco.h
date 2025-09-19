@@ -23,14 +23,14 @@ private:
 
   // Mujoco Simulation Variables
   size_t queue_size_;
-
+  bool single_thread_;
 
   // thread parameters
   std::unique_ptr<std::thread> thread_ptr;
 
 public:
   ManageMujoco(int n_joints,
-               std::vector<std::string>& mujoco_joint_names,
+               std::vector<std::string>& mujoco_joint_names,bool single_thread,
                size_t queue_size = 1024);
   ~ManageMujoco() {};
 
@@ -43,7 +43,7 @@ public:
   void initialize_queues();
   void launch_simulation(bool single_thread = false);
 
-  bool check_for_instance();
+  bool check_for_instance(){};
   void delete_simulation();
 
   // MuJoCo data structures
@@ -51,7 +51,7 @@ public:
   mjModel* mujoco_model   = NULL; // MuJoCo model
   mjData* mujoco_data    = NULL; // MuJoCo data
 
-  MujocoInitLoadObjects& load_mujoco_object_simulation_;
+   std::unique_ptr<MujocoInitLoadObjects> load_mujoco_object_simulation_;
 
   std::vector<QueuePtr> joint_commands_;
   std::vector<QueuePtr> joint_pos_states_;

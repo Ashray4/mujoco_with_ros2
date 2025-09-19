@@ -50,7 +50,7 @@ set(MUJOCO_LIBRARIES    ${MUJOCO_DIR}/lib/libmujoco.so)
 add_library(${PROJECT_NAME} SHARED
 src/mujoco_initialize_and_load_objects.cpp
 src/manage_mujoco.cpp  
-src/mujoco_ros2_system_control.cpp
+# src/mujoco_ros2_system_control.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -63,9 +63,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${MUJOCO_LIBRARIES} ${GLFW_LIBRARIES} GLEW::GLEW
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE MUJOCO_WITH_ROS2_SYSTEM_BUILDING_DLL)
+# target_compile_definitions(${PROJECT_NAME} PRIVATE MUJOCO_WITH_ROS2_SYSTEM_BUILDING_DLL)
 
-pluginlib_export_plugin_description_file(hardware_interface mujoco_with_ros2_system.xml)
+# pluginlib_export_plugin_description_file(hardware_interface mujoco_with_ros2_system.xml)
 
 add_executable(${PROJECT_NAME}_simulator_test
 src/robot_mujoco_simulator.cpp)
@@ -76,7 +76,7 @@ target_include_directories(${PROJECT_NAME}_simulator_test PUBLIC
     ${MUJOCO_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} mujoco_with_ros2
 )
 target_link_libraries(${PROJECT_NAME}_simulator_test PUBLIC
-    ${PROJECT_NAME}  # This links to your main library
+    ${PROJECT_NAME}
     ${MUJOCO_LIBRARIES} 
     ${GLFW_LIBRARIES} 
     GLEW::GLEW

@@ -13,6 +13,7 @@
 #  include <string>
 #  include <thread>
 #  include <vector>
+#  include <iostream>
 
 #  include "rclcpp/clock.hpp"
 #  include "rclcpp/duration.hpp"
@@ -20,7 +21,7 @@
 #  include "rclcpp/time.hpp"
 #  include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #  include "rclcpp_lifecycle/state.hpp"
-#  include <realtime_tools/lock_free_queue.hpp>
+#  include "realtime_tools/lock_free_queue.hpp"
 
 #  include "hardware_interface/handle.hpp"
 #  include "hardware_interface/hardware_info.hpp"
@@ -29,7 +30,7 @@
 #  include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 #  include "mujoco_with_ros2/manage_mujoco.h"
-#  include "mujoco_with_ros2/mujoco_initialize_and_load_objects.h"
+// #  include "mujoco_with_ros2/mujoco_initialize_and_load_objects.h"
 #  include "mujoco_with_ros2/visibility_control.h"
 
 #  include "GLFW/glfw3.h"

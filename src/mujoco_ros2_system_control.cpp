@@ -41,13 +41,13 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
     ur5e_joint_names[i] = info_.joints[i].name;
   }
 
-  mujoco_manager     = std::make_unique<ManageMujoco>(6,ur5e_joint_names);
-  mujoco_manager->initialize_queues();
-  current_robot_model = mujoco_manager->mujoco_model_;
-  if (!mujoco_manager->joint_commands_[0])
-  {
-      std::cout<<std::endl<<std::flush<<"Hi i am a null pointer";
-  }
+  // mujoco_manager     = std::make_unique<ManageMujoco>(6,ur5e_joint_names);
+  // mujoco_manager->initialize_queues();
+  // current_robot_model = mujoco_manager->mujoco_model_;
+  // if (!mujoco_manager->joint_commands_[0])
+  // {
+  //     std::cout<<std::endl<<std::flush<<"Hi i am a null pointer";
+  // }
   
   // for (const hardware_interface::ComponentInfo& joint : info_.joints)
   // {
@@ -187,11 +187,11 @@ MujocowithRos2SystemHardware::on_cleanup(const rclcpp_lifecycle::State& /*previo
 {
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Cleaning up ...please wait...");
 
-  auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
-  if (!loaded_object_simulation.is_deleted)
-  {
-    mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
-  }
+  // auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
+  // if (!loaded_object_simulation.is_deleted)
+  // {
+  //   mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
+  // }
 
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully cleaned up!");
 
@@ -202,7 +202,7 @@ hardware_interface::CallbackReturn
 MujocowithRos2SystemHardware::on_activate(const rclcpp_lifecycle::State& /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Activating ...please wait...");
-  mujoco_manager->launch_simulation();
+  // mujoco_manager->launch_simulation();
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -221,17 +221,17 @@ MujocowithRos2SystemHardware::on_deactivate(const rclcpp_lifecycle::State& /*pre
 hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp::Time& /*time*/,
                                                                    const rclcpp::Duration& period)
 {
-  auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
-  if (!loaded_object_simulation.is_deleted)
-  {
-    for (size_t i = 0; i < current_robot_model->nq; i++)
-    {
-      joint_pos_vector_[i] = loaded_object_simulation.joint_positions_state[i];
-      joint_vel_vector_[i] = loaded_object_simulation.joint_velocity_state[i];
-      joint_eff_vector_[i] = loaded_object_simulation.joint_acceleration_state[i];
-    }
-    // std::cout<<loaded_object_simulation.joint_positions_state.size()<<std::flush<<std::endl;
-  }
+  // auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
+  // if (!loaded_object_simulation.is_deleted)
+  // {
+  //   for (size_t i = 0; i < current_robot_model->nq; i++)
+  //   {
+  //     joint_pos_vector_[i] = loaded_object_simulation.joint_positions_state[i];
+  //     joint_vel_vector_[i] = loaded_object_simulation.joint_velocity_state[i];
+  //     joint_eff_vector_[i] = loaded_object_simulation.joint_acceleration_state[i];
+  //   }
+  //   // std::cout<<loaded_object_simulation.joint_positions_state.size()<<std::flush<<std::endl;
+  // }
   return hardware_interface::return_type::OK;
 }
 
@@ -240,14 +240,14 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
                                     const rclcpp::Duration& /*period*/)
 {
   // add a check to stop sending values in case simulation stops
-  auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
-  if (!loaded_object_simulation.is_deleted)
-  {
-    for (size_t i = 0; i < current_robot_model->nq; i++)
-    {
-      loaded_object_simulation.joint_positions_input[i] = joint_command_pos_vector_[i];
-    }
-  }
+  // auto& loaded_object_simulation = mujoco_with_ros2::MujocoInitLoadObjects::getInstance();
+  // if (!loaded_object_simulation.is_deleted)
+  // {
+  //   for (size_t i = 0; i < current_robot_model->nq; i++)
+  //   {
+  //     loaded_object_simulation.joint_positions_input[i] = joint_command_pos_vector_[i];
+  //   }
+  // }
 
   return hardware_interface::return_type::OK;
 }

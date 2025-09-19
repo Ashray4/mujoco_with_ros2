@@ -23,6 +23,7 @@
 #  include <condition_variable>
 #  include <cstdio>
 #  include <cstring>
+#  include <iostream>
 #  include <memory>
 #  include <mutex>
 #  include <string>
@@ -40,52 +41,23 @@ extern bool ready;
 extern bool processed;
 
 namespace mujoco_with_ros2 {
-
+// static mujoco_with_ros2::MujocoInitLoadObjects* global_mujoco_instance = nullptr;
 class MujocoInitLoadObjects
 {
   using QueueType = realtime_tools::LockFreeQueueBase<double, boost::lockfree::spsc_queue<double> >;
   using QueuePtr  = std::unique_ptr<QueueType>;
 
 private:
-  MujocoInitLoadObjects(mjModel* m_,
-                        mjData* d_,
-                        std::vector<QueuePtr>& joint_commands_,
+  static std::atomic_bool alive_;
+
+public:
+  MujocoInitLoadObjects(std::vector<QueuePtr>& joint_commands_,
                         std::vector<QueuePtr>& joint_pos_states_,
                         std::vector<QueuePtr>& joint_vel_states_,
                         std::vector<QueuePtr>& joint_eff_states_,
                         const std::vector<int>& joint_ids_,
-                        bool single_thread = false);
-  ~MujocoInitLoadObjects()
-  {
-    std::cout << std::endl << std::flush << "Destroying the simulation object";
-  }
-
-public:
-  static MujocoInitLoadObjects& getInstance(mjModel* m_,
-                                            mjData* d_,
-                                            std::vector<QueuePtr>& joint_commands_,
-                                            std::vector<QueuePtr>& joint_pos_states_,
-                                            std::vector<QueuePtr>& joint_vel_states_,
-                                            std::vector<QueuePtr>& joint_eff_states_,
-                                            const std::vector<int>& joint_ids_,
-                                            bool single_thread = false)
-  {
-    static MujocoInitLoadObjects load_objects_simulation(m_,
-                                                         d_,
-                                                         joint_commands_,
-                                                         joint_pos_states_,
-                                                         joint_vel_states_,
-                                                         joint_eff_states_,
-                                                         joint_ids_,
-                                                         single_thread = false);
-    return load_objects_simulation;
-  }
-
-  MujocoInitLoadObjects(const MujocoInitLoadObjects&)            = delete;
-  MujocoInitLoadObjects& operator=(const MujocoInitLoadObjects&) = delete;
-  MujocoInitLoadObjects(MujocoInitLoadObjects&&)                 = delete;
-  MujocoInitLoadObjects& operator=(MujocoInitLoadObjects&&)      = delete;
-
+                        bool single_thread);
+  ~MujocoInitLoadObjects();
 
   // MuJoCo data structures
   mjSpec* spec = NULL; // MuJoCo Spec
@@ -95,7 +67,7 @@ public:
   mjvOption opt;       // visualization options
   mjvScene scn;        // abstract scene
   mjrContext con;      // custom GPU context
-
+  GLFWwindow* window_;
 
   // mouse interaction
   bool button_left   = false;
@@ -107,7 +79,7 @@ public:
   // multi threading requirements
   bool is_deleted = false;
   bool single_thread;
-  
+
   // Buffers for interaction with ROS2 Hardware_interface
   // Joint states
   std::vector<double> joint_positions_state;
@@ -132,53 +104,86 @@ public:
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
   // and persists and initiliaze the class)
-  static mjModel* init();
   // Initialize the Simulation and load objects
   mjModel* initialize_simulation();
 
   // Start Simulation loop and launch the rendering window
-  void start_simulation(const std::vector<int>& joint_ids_, bool single_thread = false);
-  static void start_simulation(std::vector<QueuePtr>& joint_commands_,
-                               std::vector<QueuePtr>& joint_pos_states_,
-                               std::vector<QueuePtr>& joint_vel_states_,
-                               std::vector<QueuePtr>& joint_eff_states_,
-                               const std::vector<int>& joint_ids_,
-                               bool single_thread = false);
 
-
-  void starting_simulation(std::vector<QueuePtr>& joint_commands_,
-                           std::vector<QueuePtr>& joint_pos_states_,
-                           std::vector<QueuePtr>& joint_vel_states_,
-                           std::vector<QueuePtr>& joint_eff_states_,
-                           const std::vector<int>& joint_ids_,
-                           bool single_thread = false);
+  void starting_simulation();
 
   // Keyboard callback
   // static void keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods);
   // void keyboardCBImpl(GLFWwindow* window, int key, int scancode, int act, int mods);
 
   // Mouse button callback
+  void addCallbacks();
+
   static void mouseButtonCB(GLFWwindow* window, int button, int act, int mods);
   void mouseButtonCBImpl(GLFWwindow* window, int button, int act, int mods);
+  
   //
-  //// Mouse move callback
+  
   static void mouseMoveCB(GLFWwindow* window, double xpos, double ypos);
   void mouseMoveCBImpl(GLFWwindow* window, double xpos, double ypos);
-
-  // Scroll callback
+  
   static void scrollCB(GLFWwindow* window, double xoffset, double yoffset);
   void scrollCBImpl(GLFWwindow* window, double xoffset, double yoffset);
-
-  // Control input callback for the solver
+  
   static void controlCB(const mjModel* m, mjData* d);
   void controlCBImpl(const mjModel* m, mjData* d);
 
-  // Delete instance and cleanup
-  static void DeleteData();
   void DeletingData();
+
+  MujocoInitLoadObjects* loaded_object_instance_;
+
 };
 
 
 } // namespace mujoco_with_ros2
 
 #endif
+
+// #define REP10(P, M)  M(P##0) M(P##1) M(P##2) M(P##3) M(P##4) M(P##5) M(P##6) M(P##7) M(P##8) M(P##9)
+// #define REP100(M) REP10(,M) REP10(1,M) REP10(2,M) REP10(3,M) REP10(4,M) REP10(5,M) REP10(6,M) REP10(7,M) REP10(8,M) REP10(9,M)
+
+// typedef void (*callback_fn_t)(void);  // or whatever signature you need
+
+// class myclass {
+//     static struct callback_t {
+//         callback_t      *next;
+//         callback_fn_t   callback;
+//         myclass         *obj;
+//     } callback_table[100];
+//     callback_t          *my_callback;
+//     static callback_t   *freelist;
+// #define CB_FUNC_DECL(M)  static void cbfunc##M() { callback_table[M].obj->callback(); }
+//     REP100(CB_FUNC_DECL)
+
+//  public:
+//     callback_fn_t get_callback() {
+//         if (!my_callback) {
+//             if (!freelist) return nullptr;
+//             my_callback = freelist;
+//             freelist = my_callback->next;
+//             my_callback->obj = this; }
+//         return my_callback->callback;
+//     }
+//     void callback() {
+//         /* this non-static method is called by the callback */
+//     }
+
+//     myclass() : my_callback(nullptr) { }
+//     myclass(const myclass &a) : my_callback(nullptr) {
+//         // need to manually define copy
+//     }
+//     ~myclass() {
+//         if (my_callback) { 
+//             my_callback->obj = nullptr;
+//             my_callback->next = freelist;
+//             freelist = my_callback; }
+//     }
+// };
+
+// #define CB_TABLE_INIT(M) { M ? myclass::callback_table+M-1 : 0, myclass::cbfunc##M },
+// myclass::callback_t myclass::callback_table[100] = { REP100(CB_TABLE_INIT) };
+// myclass::callback_t *myclass::freelist = &myclass::callback_table[99];

@@ -2,6 +2,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+
 int main()
 {
   // call the static function here
@@ -12,13 +13,18 @@ int main()
                            "wrist_1_joint",
                            "wrist_2_joint",
                            "wrist_3_joint"};
-  mujoco_with_ros2::ManageMujoco mujoco_manager(n_joints,ur5e_joint_names);
+  mujoco_with_ros2::ManageMujoco mujoco_manager(n_joints,ur5e_joint_names,true);
+  
+  //initialize the instance
+  mujoco_manager.load_mujoco_object_simulation_->getInstance(mujoco_manager.load_mujoco_object_simulation_.get());
+  //initializeing simulation
+  mujoco_manager.load_mujoco_object_simulation_->initialize_simulation();
 
   // start Simulation and visualization
-  mujoco_manager.load_mujoco_object_simulation_.start_simulation(mujoco_manager.getJointIds(),true);
+  mujoco_manager.load_mujoco_object_simulation_->starting_simulation();
 
-  // delete data
-  mujoco_manager.load_mujoco_object_simulation_.DeleteData();
+  // // delete data
+  mujoco_manager.load_mujoco_object_simulation_->DeletingData();
 
   return 0;
 }

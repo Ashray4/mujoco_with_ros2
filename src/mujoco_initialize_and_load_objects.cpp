@@ -20,35 +20,12 @@
 
 std::mutex mut_ready;
 std::condition_variable cv;
-bool ready     = false;
+bool ready = false;
 bool processed = false;
 
 namespace mujoco_with_ros2 {
 
-MujocoInitLoadObjects::MujocoInitLoadObjects(mjModel* m_,
-                                             mjData* d_,
-                                             std::vector<QueuePtr>& joint_commands_,
-                                             std::vector<QueuePtr>& joint_pos_states_,
-                                             std::vector<QueuePtr>& joint_vel_states_,
-                                             std::vector<QueuePtr>& joint_eff_states_,
-                                             const std::vector<int>& joint_ids_,
-                                             bool single_thread = false)
-  : m(m_)
-  , d(d_)
-  , joint_commands_(joint_commands_)
-  , joint_pos_states_(joint_pos_states_)
-  , joint_vel_states_(joint_vel_states_)
-  , joint_eff_states_(joint_eff_states_)
-  , ur5e_joint_ids(joint_ids_)
-  ,single_thread(single_thread)
-{
-  ur5e_joint_names = {"shoulder_pan_joint",
-                      "shoulder_lift_joint",
-                      "elbow_joint",
-                      "wrist_1_joint",
-                      "wrist_2_joint",
-                      "wrist_3_joint"};
-}
+MujocoInitLoadObjects::MujocoInitLoadObjects() {}
 
 // mouse button callback
 void MujocoInitLoadObjects::mouseButtonCB(GLFWwindow* window, int button, int act, int mods)
@@ -140,29 +117,14 @@ void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
 void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
 {
   // Check if controls are equal
-
-  // std::cout << std::endl<<m->nu<<std::endl<<std::flush;
-  // std::cout << std::endl<<d->ctrl<<std::endl<<std::flush;
-
-  if ()
-  {
-    /* code */
-  }
-
-  for (int i = 0; i < 6; ++i)
+  
+  for (int i = 0; i < m->nq; ++i)
   {
     d->ctrl[i]                  = joint_positions_input[i];
-    int joint_id                = mj_name2id(m, mjOBJ_JOINT, ur5e_joint_names[i].c_str());
-    joint_positions_state[i]    = d->qpos[m->jnt_qposadr[joint_id]];
-    joint_velocity_state[i]     = d->qvel[m->jnt_dofadr[joint_id]];
-    joint_acceleration_state[i] = d->act[m->jnt_dofadr[joint_id]];
+    joint_positions_state[i]    = *d->qpos;
+    joint_velocity_state[i]     = *d->qvel;
+    joint_acceleration_state[i] = *d->act;
     time_state[i]               = d->time;
-
-    // std::cout << std::endl << "joint_positions_state[i]" << joint_positions_state[i] <<
-    // std::flush; std::cout << std::endl << "joint_velocity_state[i]" << joint_velocity_state[i] <<
-    // std::flush; std::cout << std::endl
-    //           << "joint_acceleration_state[i]" << joint_acceleration_state[i] << std::flush;
-
     // joint_velocity_state[i] = d->qpvel
     // joint_acceleration_state = d->q
   }
@@ -192,19 +154,18 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
 
     // To:Do Possible Object creation and spec editing here
 
-    // spec->option.disableactuator = 1;
-    // spec->option.disableactuator = 2;
+    spec->option.disableactuator = 1;
+    spec->option.disableactuator = 2;
 
-    m               = mj_compile(spec, NULL);
-    m->opt.timestep = 0.002;
-    d               = mj_makeData(m);
+    m = mj_compile(spec, NULL);
+    d = mj_makeData(m);
 
     // Initialize the buffers
     joint_positions_state.resize(m->nq, 0.0);
     joint_velocity_state.resize(m->nq, 0.0);
     joint_acceleration_state.resize(m->nq, 0.0);
     time_state.resize(m->nq, 0.0);
-    joint_positions_input.resize(m->nq, 0.1);
+    joint_positions_input.resize(m->nq, 0.0);
     joint_velocity_input.resize(m->nq, 0.0);
     joint_acceleration_input.resize(m->nq, 0.0);
 
@@ -218,44 +179,20 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
   }
 }
 
-void MujocoInitLoadObjects::start_simulation(const std::vector<int>& joint_ids_, bool single_thread)
-{
-  static std::vector<QueuePtr> empty_vector{};
-  start_simulation(
-    empty_vector, empty_vector, empty_vector, empty_vector, joint_ids_, single_thread);
-}
-
-void MujocoInitLoadObjects::start_simulation(std::vector<QueuePtr>& joint_commands_,
-                                             std::vector<QueuePtr>& joint_pos_states_,
-                                             std::vector<QueuePtr>& joint_vel_states_,
-                                             std::vector<QueuePtr>& joint_eff_states_,
-                                             const std::vector<int>& joint_ids_,
-                                             bool single_thread)
+void MujocoInitLoadObjects::start_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands)
 {
   std::cout << std::flush << "Starting Simulation" << std::endl;
-  getInstance().starting_simulation(joint_commands_,
-                                    joint_pos_states_,
-                                    joint_vel_states_,
-                                    joint_eff_states_,
-                                    joint_ids_,
-                                    single_thread);
+  getInstance().starting_simulation(joint_position_commands);
 }
 
-void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_commands_,
-                                                std::vector<QueuePtr>& joint_pos_states_,
-                                                std::vector<QueuePtr>& joint_vel_states_,
-                                                std::vector<QueuePtr>& joint_eff_states_,
-                                                const std::vector<int>& joint_ids_,
-                                                bool single_thread)
+void MujocoInitLoadObjects::starting_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands)
 { // check if valid model available
-
+  
   std::unique_lock<std::mutex> lk(mut_ready);
-  if (!single_thread)
-  {
-    cv.wait(lk, [] { return ready; });
-  }
+  cv.wait(lk, []{ return ready; });
 
-  std::cout << std::flush << "Simulation thread is starting the simulation\n";
+
+  std::cout <<std::flush<< "Simulation thread is starting the simulation\n";
   if (m)
   {
     /* code */
@@ -265,9 +202,6 @@ void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_com
     {
       mju_error("Could not initialize GLFW");
     }
-
-    // Initialize vectors and states
-    ur5e_joint_ids = joint_ids_;
 
     // create window, make OpenGL context current, request v-sync
     GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
@@ -310,7 +244,7 @@ void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_com
       {
         mj_step(m, d);
       }
-
+      
       // get framebuffer viewport
       mjrRect viewport = {0, 0, 0, 0};
       glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
@@ -324,20 +258,17 @@ void MujocoInitLoadObjects::starting_simulation(std::vector<QueuePtr>& joint_com
 
       // process pending GUI events, call GLFW callbacks
       glfwPollEvents();
-      if (!simulation_start && !single_thread)
-      {
-        std::cout << std::flush << "Unlocking and notifying" << std::endl;
+      if (!simulation_start)
+      { 
+        std::cout<<std::flush<<"Unlocking and notifying"<<std::endl;
         simulation_start = true;
-        processed        = true;
+        processed = true;      
         lk.unlock();
         cv.notify_one();
       }
     }
 
-    if (!single_thread)
-    {
-      DeleteData();
-    }
+    DeleteData();
   }
 }
 void MujocoInitLoadObjects::DeleteData()
@@ -362,7 +293,7 @@ void MujocoInitLoadObjects::DeletingData()
 // Should be a global main so that the linker finds it, inside the namespace it represents that
 // namespace
 // int main()
-// {
+// { 
 //   // call the static function here
 //   mujoco_with_ros2::MujocoInitLoadObjects::init();
 

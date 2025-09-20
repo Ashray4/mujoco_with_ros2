@@ -108,6 +108,7 @@
         "filesystem": "cpp",
         "ios": "cpp",
         "__hash_table": "cpp",
-        "__split_buffer": "cpp"
+        "__split_buffer": "cpp",
+        "command_and_state_buffer,h": "cpp"
     }
 }

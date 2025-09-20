@@ -1,20 +1,17 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <memory>
 
+#include <mujoco_with_ros2/command_and_state_buffer.h>
 #include <mujoco_with_ros2/mujoco_initialize_and_load_objects.h>
 
 #include "GLFW/glfw3.h"
 #include "mujoco/mujoco.h"
 
-#include <realtime_tools/lock_free_queue.hpp>
-
 namespace mujoco_with_ros2 {
 class ManageMujoco
 {
-  using QueueType = realtime_tools::LockFreeQueueBase<double, boost::lockfree::spsc_queue<double> >;
-  using QueuePtr  = std::unique_ptr<QueueType>;
-
 private:
   // command and state values
   int n_joints_;
@@ -47,15 +44,13 @@ public:
   void delete_simulation();
 
   // MuJoCo data structures
-  mjSpec* mujoco_spec = NULL; // MuJoCo Spec
-  mjModel* mujoco_model   = NULL; // MuJoCo model
-  mjData* mujoco_data    = NULL; // MuJoCo data
-
+  mjSpec* mujoco_spec   = NULL; // MuJoCo Spec
+  mjModel* mujoco_model = NULL; // MuJoCo model
+  mjData* mujoco_data   = NULL; // MuJoCo data
+  
   MujocoInitLoadObjects& load_mujoco_object_simulation_;
-
-  std::vector<QueuePtr> joint_commands_;
-  std::vector<QueuePtr> joint_pos_states_;
-  std::vector<QueuePtr> joint_vel_states_;
-  std::vector<QueuePtr> joint_eff_states_;
+  
+  std::shared_ptr<CommandBuffer> command_buffer_;
+  std::shared_ptr<StateBuffer> state_buffer_;
 };
 } // namespace mujoco_with_ros2

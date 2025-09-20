@@ -32,7 +32,8 @@
 #  include "GLFW/glfw3.h"
 #  include "mujoco/mujoco.h"
 
-#  include <realtime_tools/lock_free_queue.hpp>
+#  include <mujoco_with_ros2/command_and_state_buffer.h>
+#  include <rclcpp/rclcpp.hpp>
 
 extern std::mutex mut_ready;
 extern std::condition_variable cv;
@@ -40,44 +41,19 @@ extern bool ready;
 extern bool processed;
 
 namespace mujoco_with_ros2 {
-
 class MujocoInitLoadObjects
 {
-  using QueueType = realtime_tools::LockFreeQueueBase<double, boost::lockfree::spsc_queue<double> >;
-  using QueuePtr  = std::unique_ptr<QueueType>;
-
 private:
-  MujocoInitLoadObjects(mjModel* m_,
-                        mjData* d_,
-                        std::vector<QueuePtr>& joint_commands_,
-                        std::vector<QueuePtr>& joint_pos_states_,
-                        std::vector<QueuePtr>& joint_vel_states_,
-                        std::vector<QueuePtr>& joint_eff_states_,
-                        const std::vector<int>& joint_ids_,
-                        bool single_thread = false);
+  MujocoInitLoadObjects();
   ~MujocoInitLoadObjects()
   {
     std::cout << std::endl << std::flush << "Destroying the simulation object";
   }
 
 public:
-  static MujocoInitLoadObjects& getInstance(mjModel* m_,
-                                            mjData* d_,
-                                            std::vector<QueuePtr>& joint_commands_,
-                                            std::vector<QueuePtr>& joint_pos_states_,
-                                            std::vector<QueuePtr>& joint_vel_states_,
-                                            std::vector<QueuePtr>& joint_eff_states_,
-                                            const std::vector<int>& joint_ids_,
-                                            bool single_thread = false)
+  static MujocoInitLoadObjects& getInstance()
   {
-    static MujocoInitLoadObjects load_objects_simulation(m_,
-                                                         d_,
-                                                         joint_commands_,
-                                                         joint_pos_states_,
-                                                         joint_vel_states_,
-                                                         joint_eff_states_,
-                                                         joint_ids_,
-                                                         single_thread = false);
+    static MujocoInitLoadObjects load_objects_simulation;
     return load_objects_simulation;
   }
 
@@ -106,9 +82,10 @@ public:
 
   // multi threading requirements
   bool is_deleted = false;
-  bool single_thread;
-  
   // Buffers for interaction with ROS2 Hardware_interface
+  std::shared_ptr<CommandBuffer> command_buffer_;
+  std::shared_ptr<StateBuffer> state_buffer_;
+
   // Joint states
   std::vector<double> joint_positions_state;
   std::vector<double> joint_velocity_state;
@@ -119,15 +96,6 @@ public:
   std::vector<double> joint_velocity_input;
   std::vector<double> joint_acceleration_input;
 
-  std::vector<QueuePtr>& joint_commands_;
-  std::vector<QueuePtr>& joint_pos_states_;
-  std::vector<QueuePtr>& joint_vel_states_;
-  std::vector<QueuePtr>& joint_eff_states_;
-
-  // Joint Names and ids
-  std::vector<std::string> ur5e_joint_names;
-  std::vector<int> ur5e_joint_ids;
-
   //(To Review maybe a better way (Singleton Class))
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
@@ -137,21 +105,8 @@ public:
   mjModel* initialize_simulation();
 
   // Start Simulation loop and launch the rendering window
-  void start_simulation(const std::vector<int>& joint_ids_, bool single_thread = false);
-  static void start_simulation(std::vector<QueuePtr>& joint_commands_,
-                               std::vector<QueuePtr>& joint_pos_states_,
-                               std::vector<QueuePtr>& joint_vel_states_,
-                               std::vector<QueuePtr>& joint_eff_states_,
-                               const std::vector<int>& joint_ids_,
-                               bool single_thread = false);
-
-
-  void starting_simulation(std::vector<QueuePtr>& joint_commands_,
-                           std::vector<QueuePtr>& joint_pos_states_,
-                           std::vector<QueuePtr>& joint_vel_states_,
-                           std::vector<QueuePtr>& joint_eff_states_,
-                           const std::vector<int>& joint_ids_,
-                           bool single_thread = false);
+  static void start_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands);
+  void starting_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands);
 
   // Keyboard callback
   // static void keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods);

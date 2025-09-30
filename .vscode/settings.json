@@ -109,6 +109,8 @@
         "ios": "cpp",
         "__hash_table": "cpp",
         "__split_buffer": "cpp",
-        "command_and_state_buffer,h": "cpp"
+        "command_and_state_buffer,h": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

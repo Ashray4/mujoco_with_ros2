@@ -8,21 +8,25 @@ ManageMujoco::ManageMujoco(int n_joints,
   : n_joints_{n_joints}
   , mujoco_joint_names_{mujoco_joint_names}
   , queue_size_{queue_size}
+  , load_mujoco_object_simulation_{MujocoInitLoadObjects::getInstance()}
   , command_buffer_(std::make_shared<CommandBuffer>())
   , state_buffer_(std::make_shared<StateBuffer>())
-  , load_mujoco_object_simulation_{MujocoInitLoadObjects::getInstance()}
   , mujoco_model{load_mujoco_object_simulation_.init()}
 {
+  load_mujoco_object_simulation_.initialize_buffers(command_buffer_,state_buffer_);
   mujoco_joint_ids_.reserve(n_joints_);
   for (int i = 0; i < n_joints_; i++)
   {
     mujoco_joint_ids_.push_back(
       mj_name2id(mujoco_model, mjOBJ_JOINT, mujoco_joint_names_[i].c_str()));
+  
+      //initialize commands to 0 and add the command type logic later
+      command_buffer_->push_value(CommandTypes::POSITION,i,0.3);
   }
 }
 
 void ManageMujoco::initialize_mujoco_simulation()
-{ 
+{
   mujoco_with_ros2::MujocoInitLoadObjects::init();
 }
 int ManageMujoco::totalJoints()

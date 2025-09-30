@@ -27,6 +27,12 @@ namespace mujoco_with_ros2 {
 
 MujocoInitLoadObjects::MujocoInitLoadObjects() {}
 
+void MujocoInitLoadObjects::initialize_buffers(std::shared_ptr<CommandBuffer> c_buff,
+                                               std::shared_ptr<StateBuffer> s_buff)
+{
+  command_buffer_ = c_buff;
+  state_buffer_   = s_buff;
+}
 // mouse button callback
 void MujocoInitLoadObjects::mouseButtonCB(GLFWwindow* window, int button, int act, int mods)
 {
@@ -118,13 +124,20 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
 {
   // Check if controls are equal
 
-  for (int i = 0; i < m->nq; ++i)
-  {
-    d->ctrl[i]                  = joint_positions_input[i];
-    joint_positions_state[i]    = *d->qpos;
-    joint_velocity_state[i]     = *d->qvel;
-    joint_acceleration_state[i] = *d->act;
-    time_state[i]               = d->time;
+  std::cout<<std::flush<<std::endl<<m->nu<<std::endl;
+
+  for (int i = 0; i < 6; ++i)
+  { 
+    
+    if (command_buffer_->pop_value(CommandTypes::POSITION, i, data_out))
+    {
+      d->ctrl[i] = data_out;
+    }
+
+    state_buffer_->push_value(CommandTypes::POSITION, i, *d->qpos);
+    state_buffer_->push_value(CommandTypes::VELOCITY, i, *d->qvel);
+    state_buffer_->push_value(CommandTypes::EFFORT, i, *d->qacc);
+    time_state[i] = d->time;
     // joint_velocity_state[i] = d->qpvel
     // joint_acceleration_state = d->q
   }

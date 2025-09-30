@@ -16,24 +16,24 @@
 
 #pragma once
 #ifndef MUJOCO_LOAD_AND_INITIALIZE_OBJECTS_H
-#define MUJOCO_LOAD_AND_INITIALIZE_OBJECTS_H
+#  define MUJOCO_LOAD_AND_INITIALIZE_OBJECTS_H
 
-#include <array>
-#include <atomic>
-#include <cstdio>
-#include <cstring>
-#include <memory>
-#include <condition_variable>
-#include <mutex>
-#include <string>
-#include <vector>
-#include <thread>
+#  include <array>
+#  include <atomic>
+#  include <condition_variable>
+#  include <cstdio>
+#  include <cstring>
+#  include <memory>
+#  include <mutex>
+#  include <string>
+#  include <thread>
+#  include <vector>
 
-#include "GLFW/glfw3.h"
-#include "mujoco/mujoco.h"
+#  include "GLFW/glfw3.h"
+#  include "mujoco/mujoco.h"
 
-#include <rclcpp/rclcpp.hpp>
-#include <realtime_tools/lock_free_queue.hpp>
+#  include <mujoco_with_ros2/command_and_state_buffer.h>
+#  include <realtime_tools/lock_free_queue.hpp>
 
 extern std::mutex mut_ready;
 extern std::condition_variable cv;
@@ -48,11 +48,10 @@ private:
   MujocoInitLoadObjects();
   ~MujocoInitLoadObjects()
   {
-    std::cout<<std::endl<<std::flush<<"Destroying the simulation object";
+    std::cout << std::endl << std::flush << "Destroying the simulation object";
   }
-public:
 
-  std::shared_ptr<rclcpp::Node> m_node;
+public:
   static MujocoInitLoadObjects& getInstance()
   {
     static MujocoInitLoadObjects load_objects_simulation;
@@ -64,17 +63,15 @@ public:
   MujocoInitLoadObjects(MujocoInitLoadObjects&&)                 = delete;
   MujocoInitLoadObjects& operator=(MujocoInitLoadObjects&&)      = delete;
 
-  static std::shared_ptr<rclcpp::Node> getNode() { return getInstance().m_node; };
-
   // MuJoCo data structures
   mjSpec* spec = NULL; // MuJoCo Spec
-  mjModel* m = NULL; // MuJoCo model
-  mjData* d  = NULL; // MuJoCo data
-  mjvCamera cam;     // abstract camera
-  mjvOption opt;     // visualization options
-  mjvScene scn;      // abstract scene
-  mjrContext con;    // custom GPU context
-
+  mjModel* m   = NULL; // MuJoCo model
+  mjData* d    = NULL; // MuJoCo data
+  mjvCamera cam;       // abstract camera
+  mjvOption opt;       // visualization options
+  mjvScene scn;        // abstract scene
+  mjrContext con;      // custom GPU context
+  double data_out;
 
   // mouse interaction
   bool button_left   = false;
@@ -83,23 +80,26 @@ public:
   double lastx       = 0;
   double lasty       = 0;
 
-  //multi threading requirements 
+  // multi threading requirements
   bool is_deleted = false;
-  
-  //Buffers for interaction with ROS2 Hardware_interface
-  //Joint states
+
+  // Buffers for interaction with ROS2 Hardware_interface
+  // Joint states
   std::vector<double> joint_positions_state;
   std::vector<double> joint_velocity_state;
   std::vector<double> joint_acceleration_state;
   std::vector<double> time_state;
-  //Joint Inputs
+  // Joint Inputs
   std::vector<double> joint_positions_input;
   std::vector<double> joint_velocity_input;
   std::vector<double> joint_acceleration_input;
-  
-  //Joint Names
+
+  // Joint Names
   std::vector<std::string> ur5e_joint_names;
 
+  // buffers
+  std::shared_ptr<CommandBuffer> command_buffer_;
+  std::shared_ptr<StateBuffer> state_buffer_;
   //(To Review maybe a better way (Singleton Class))
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
@@ -108,7 +108,7 @@ public:
   // Initialize the Simulation and load objects
   mjModel* initialize_simulation();
 
-  //Start Simulation loop and launch the rendering window
+  // Start Simulation loop and launch the rendering window
   static void start_simulation(bool single_thread = false);
   void starting_simulation(bool single_thread = false);
 
@@ -132,9 +132,12 @@ public:
   static void controlCB(const mjModel* m, mjData* d);
   void controlCBImpl(const mjModel* m, mjData* d);
 
-  // Delete instance and cleanup 
+  // Delete instance and cleanup
   static void DeleteData();
   void DeletingData();
+
+  //provide shared buffers for connections
+  void initialize_buffers(std::shared_ptr<CommandBuffer> c_buff,std::shared_ptr<StateBuffer> s_buff);
 };
 
 

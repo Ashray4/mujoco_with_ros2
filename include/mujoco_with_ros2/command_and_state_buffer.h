@@ -2,11 +2,11 @@
 #ifndef QUEUE_BUFFERS_H
 #  define QUEUE_BUFFERS_H
 
-#include <utility>
-#include <vector>
+#  include <utility>
+#  include <vector>
 
-#include <bits/stdc++.h>
-#include <realtime_tools/lock_free_queue.hpp>
+#  include <bits/stdc++.h>
+#  include <realtime_tools/lock_free_queue.hpp>
 
 namespace mujoco_with_ros2 {
 enum class CommandTypes
@@ -22,28 +22,30 @@ struct QueueBuffers
   using QueuePtr  = std::unique_ptr<QueueType>;
 
   int queue_size_;
+  std::vector<double> prev_data;
   size_t num_joints;
   std::vector<QueuePtr> position_values_;
   std::vector<QueuePtr> velocity_values_;
   std::vector<QueuePtr> effort_values_;
 
   std::string command_name;
-  std::vector<CommandTypes> command_types;
+  std::vector<CommandTypes> command_types_;
 
-  QueueBuffers(int queue_size, size_t n_joints, std::vector<CommandTypes>& command_types)
+  QueueBuffers(int queue_size, size_t n_joints, std::vector<CommandTypes> command_types)
   {
-    queue_size_   = queue_size;
-    num_joints    = n_joints;
-    command_types = command_types;
+    queue_size_    = queue_size;
+    num_joints     = n_joints;
+    command_types_ = command_types;
     initialize_queue();
+    prev_data.resize(n_joints);
   }
   void initialize_queue()
   {
-    auto command_size = command_types.size();
+    auto command_size = command_types_.size();
 
     for (int i = 0; i < command_size; i++)
     {
-      switch (command_types[i])
+      switch (command_types_[i])
       {
         case CommandTypes::POSITION:
           for (int j = 0; j < num_joints; j++)
@@ -54,19 +56,20 @@ struct QueueBuffers
         case CommandTypes::VELOCITY:
           for (int j = 0; j < num_joints; j++)
           {
-             velocity_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+            velocity_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
           }
           break;
         case CommandTypes::EFFORT:
           for (int j = 0; j < num_joints; j++)
           {
-             effort_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+            effort_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
           }
           break;
         default:
           break;
       }
     }
+    std::cout << std::endl << command_types_.size();
   }
 
   std::string& get_name(std::pair<CommandTypes, std::vector<QueuePtr> >& command_pair)
@@ -96,7 +99,8 @@ struct QueueBuffers
       case CommandTypes::POSITION:
         if (!position_values_.empty())
         {
-          static_cast<void>(position_values_[index]->push(value));
+          std::cout << std::endl << "Hi i am trying to push";
+          std::cout << std::endl << position_values_[index]->push(value);
         }
         break;
       case CommandTypes::VELOCITY:
@@ -116,41 +120,42 @@ struct QueueBuffers
     }
   }
 
-  double pop_value(CommandTypes type, int index)
+  bool pop_value(CommandTypes type, int index,double& data)
   {
-    double data;
+    bool success = false;
     switch (type)
     {
       case CommandTypes::POSITION:
         if (!position_values_.empty())
         {
-          static_cast<void>(position_values_[index]->pop(data));
+          success = position_values_[index]->pop(data);
+          std::cout << std::endl << "Hi i am trying to pop" << data;
         }
         break;
       case CommandTypes::VELOCITY:
         if (!velocity_values_.empty())
         {
-          static_cast<void>(velocity_values_[index]->pop(data));
+          success = velocity_values_[index]->pop(data);
         }
         break;
       case CommandTypes::EFFORT:
         if (!effort_values_.empty())
         {
-          static_cast<void>(effort_values_[index]->pop(data));
+          success = effort_values_[index]->pop(data);
         }
         break;
       default:
         break;
     }
-    return data;
+
+    return success;
   }
 };
 struct CommandBuffer : QueueBuffers
 {
-  std::vector<CommandTypes> command_type_default{CommandTypes::POSITION};
   // Default constructor for a 6 joint robot
   CommandBuffer()
-    : QueueBuffers(1024, 6, command_type_default)
+    : QueueBuffers(1024, 6, {CommandTypes::POSITION})
   {
   }
   CommandBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes>& command_type)
@@ -161,11 +166,9 @@ struct CommandBuffer : QueueBuffers
 
 struct StateBuffer : QueueBuffers
 {
-  std::vector<CommandTypes> command_type_default{
-    CommandTypes::POSITION, CommandTypes::VELOCITY, CommandTypes::EFFORT};
   // Default constructor for a 6 joint robot
   StateBuffer()
-    : QueueBuffers(1024, 6, command_type_default)
+    : QueueBuffers(1024, 6, {CommandTypes::POSITION, CommandTypes::VELOCITY, CommandTypes::EFFORT})
   {
   }
   StateBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes>& command_type)

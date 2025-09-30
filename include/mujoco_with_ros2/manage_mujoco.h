@@ -33,7 +33,7 @@ public:
 
   int totalJoints();
 
-  mjModel* initialize_mujoco_model();
+  void initialize_mujoco_simulation();
   const std::vector<std::string>& getJointNames();
   const std::vector<int>& getJointIds();
 

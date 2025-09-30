@@ -20,7 +20,7 @@
 
 std::mutex mut_ready;
 std::condition_variable cv;
-bool ready = false;
+bool ready     = false;
 bool processed = false;
 
 namespace mujoco_with_ros2 {
@@ -117,7 +117,7 @@ void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
 void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
 {
   // Check if controls are equal
-  
+
   for (int i = 0; i < m->nq; ++i)
   {
     d->ctrl[i]                  = joint_positions_input[i];
@@ -179,20 +179,22 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
   }
 }
 
-void MujocoInitLoadObjects::start_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands)
+void MujocoInitLoadObjects::start_simulation(bool single_thread)
 {
   std::cout << std::flush << "Starting Simulation" << std::endl;
-  getInstance().starting_simulation(joint_position_commands);
+  getInstance().starting_simulation(single_thread);
 }
 
-void MujocoInitLoadObjects::starting_simulation(realtime_tools::LockFreeSPSCQueue<double>& joint_position_commands)
+void MujocoInitLoadObjects::starting_simulation(bool single_thread)
 { // check if valid model available
-  
+
   std::unique_lock<std::mutex> lk(mut_ready);
-  cv.wait(lk, []{ return ready; });
+  if (!single_thread)
+  {
+    cv.wait(lk, [] { return ready; });
+  }
 
-
-  std::cout <<std::flush<< "Simulation thread is starting the simulation\n";
+  std::cout << std::flush << "Simulation thread is starting the simulation\n";
   if (m)
   {
     /* code */
@@ -244,7 +246,7 @@ void MujocoInitLoadObjects::starting_simulation(realtime_tools::LockFreeSPSCQueu
       {
         mj_step(m, d);
       }
-      
+
       // get framebuffer viewport
       mjrRect viewport = {0, 0, 0, 0};
       glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
@@ -258,17 +260,15 @@ void MujocoInitLoadObjects::starting_simulation(realtime_tools::LockFreeSPSCQueu
 
       // process pending GUI events, call GLFW callbacks
       glfwPollEvents();
-      if (!simulation_start)
-      { 
-        std::cout<<std::flush<<"Unlocking and notifying"<<std::endl;
+      if (!simulation_start & !single_thread)
+      {
+        std::cout << std::flush << "Unlocking and notifying" << std::endl;
         simulation_start = true;
-        processed = true;      
+        processed        = true;
         lk.unlock();
         cv.notify_one();
       }
     }
-
-    DeleteData();
   }
 }
 void MujocoInitLoadObjects::DeleteData()
@@ -293,7 +293,7 @@ void MujocoInitLoadObjects::DeletingData()
 // Should be a global main so that the linker finds it, inside the namespace it represents that
 // namespace
 // int main()
-// { 
+// {
 //   // call the static function here
 //   mujoco_with_ros2::MujocoInitLoadObjects::init();
 

@@ -8,13 +8,12 @@ ManageMujoco::ManageMujoco(int n_joints,
   : n_joints_{n_joints}
   , mujoco_joint_names_{mujoco_joint_names}
   , queue_size_{queue_size}
-  // , mujoco_model{initialize_mujoco_model()}
   , command_buffer_(std::make_shared<CommandBuffer>())
   , state_buffer_(std::make_shared<StateBuffer>())
   , load_mujoco_object_simulation_{MujocoInitLoadObjects::getInstance()}
+  , mujoco_model{load_mujoco_object_simulation_.init()}
 {
   mujoco_joint_ids_.reserve(n_joints_);
-
   for (int i = 0; i < n_joints_; i++)
   {
     mujoco_joint_ids_.push_back(
@@ -22,42 +21,9 @@ ManageMujoco::ManageMujoco(int n_joints,
   }
 }
 
-mjModel* ManageMujoco::initialize_mujoco_model()
-{
-  // (Test) Load XML manually for now and test the model
-  try
-  {
-    char err_str[1000];
-    int err_str_sz = 1000;
-    mujoco_spec           = mj_parseXML(
-      "/home/saksham/checkout/thesis_ws/colcon_ws/src/mujoco_with_ros2/models/ur5e/urdf/scene.xml",
-      NULL,
-      err_str,
-      err_str_sz);
-
-    if (!mujoco_spec)
-    {
-      std::cout << std::flush << "Problem with model" << std::endl;
-      std::cout << std::flush << err_str << std::endl;
-      return nullptr;
-    }
-
-    // To:Do Possible Object creation and spec editing here
-
-    // spec->option.disableactuator = 1;
-    // spec->option.disableactuator = 2;
-
-    mujoco_model               = mj_compile(mujoco_spec, NULL);
-    mujoco_model->opt.timestep = 0.002;
-    mujoco_data                = mj_makeData(mujoco_model);
-    return mujoco_model;
-
-  }
-  catch (const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    return nullptr;
-  }
+void ManageMujoco::initialize_mujoco_simulation()
+{ 
+  mujoco_with_ros2::MujocoInitLoadObjects::init();
 }
 int ManageMujoco::totalJoints()
 {

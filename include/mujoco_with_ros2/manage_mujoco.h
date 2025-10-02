@@ -29,7 +29,7 @@ public:
   ManageMujoco(int n_joints,
                std::vector<std::string>& mujoco_joint_names,
                size_t queue_size = 1024);
-  ~ManageMujoco() {};
+  ~ManageMujoco();
 
   int totalJoints();
 

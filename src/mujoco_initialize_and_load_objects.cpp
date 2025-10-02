@@ -277,6 +277,7 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
       }
     }
   }
+  DeleteData();
 }
 void MujocoInitLoadObjects::DeleteData()
 {

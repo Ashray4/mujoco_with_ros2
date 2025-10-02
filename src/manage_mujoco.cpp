@@ -24,7 +24,10 @@ ManageMujoco::ManageMujoco(int n_joints,
     command_buffer_->push_value(CommandTypes::POSITION, i, 0.3);
   }
 }
-
+ManageMujoco::~ManageMujoco()
+{
+  thread_ptr->join();
+}
 void ManageMujoco::initialize_mujoco_simulation()
 {
   char err_str[1000];

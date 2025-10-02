@@ -186,7 +186,7 @@ MujocowithRos2SystemHardware::on_cleanup(const rclcpp_lifecycle::State& /*previo
   {
     mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
   }
-
+  
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully cleaned up!");
 
   return hardware_interface::CallbackReturn::SUCCESS;

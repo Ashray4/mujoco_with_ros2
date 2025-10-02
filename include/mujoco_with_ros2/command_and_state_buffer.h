@@ -69,7 +69,6 @@ struct QueueBuffers
           break;
       }
     }
-    std::cout << std::endl << command_types_.size();
   }
 
   std::string& get_name(std::pair<CommandTypes, std::vector<QueuePtr> >& command_pair)
@@ -99,8 +98,7 @@ struct QueueBuffers
       case CommandTypes::POSITION:
         if (!position_values_.empty())
         {
-          std::cout << std::endl << "Hi i am trying to push";
-          std::cout << std::endl << position_values_[index]->push(value);
+          static_cast<void>(position_values_[index]->push(value));
         }
         break;
       case CommandTypes::VELOCITY:
@@ -129,7 +127,6 @@ struct QueueBuffers
         if (!position_values_.empty())
         {
           success = position_values_[index]->pop(data);
-          std::cout << std::endl << "Hi i am trying to pop" << data;
         }
         break;
       case CommandTypes::VELOCITY:

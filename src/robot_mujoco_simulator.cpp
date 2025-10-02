@@ -16,7 +16,7 @@ int main()
   mujoco_with_ros2::ManageMujoco mujoco_manager(n_joints, ur5e_joint_names);
 
   // // start Simulation and visualization
-  mujoco_manager.initialize_mujoco_simulation();
+  //mujoco_manager.initialize_mujoco_simulation();
   mujoco_manager.load_mujoco_object_simulation_.start_simulation(true);
 
   // // // delete data

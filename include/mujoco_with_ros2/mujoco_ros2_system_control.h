@@ -17,6 +17,7 @@
 #  include "rclcpp/clock.hpp"
 #  include "rclcpp/duration.hpp"
 #  include "rclcpp/macros.hpp"
+#  include "rclcpp/rclcpp.hpp"
 #  include "rclcpp/time.hpp"
 #  include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #  include "rclcpp_lifecycle/state.hpp"
@@ -80,12 +81,12 @@ protected:
   std::vector<double> joint_command_pos_vector_;
   std::vector<double> joint_command_vel_vector_;
   std::vector<double> joint_command_eff_vector_;
-  
+
 public:
-  mjModel* current_robot_model;
   std::unique_ptr<ManageMujoco> mujoco_manager;
   std::vector<std::string> ur5e_joint_names;
-  
+  double read_data_;
+  double write_data_;
 };
 
 } // namespace mujoco_with_ros2

@@ -50,7 +50,7 @@ set(MUJOCO_LIBRARIES    ${MUJOCO_DIR}/lib/libmujoco.so)
 add_library(${PROJECT_NAME} SHARED
 src/mujoco_initialize_and_load_objects.cpp
 src/manage_mujoco.cpp  
-#src/mujoco_ros2_system_control.cpp
+src/mujoco_ros2_system_control.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

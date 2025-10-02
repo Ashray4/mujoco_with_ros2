@@ -104,9 +104,9 @@ public:
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
   // and persists and initiliaze zthe class)
-  static mjModel* init();
+  static void init();
   // Initialize the Simulation and load objects
-  mjModel* initialize_simulation();
+  void initialize_simulation();
 
   // Start Simulation loop and launch the rendering window
   static void start_simulation(bool single_thread = false);

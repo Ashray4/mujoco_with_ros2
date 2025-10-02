@@ -124,11 +124,8 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
 {
   // Check if controls are equal
 
-  std::cout<<std::flush<<std::endl<<m->nu<<std::endl;
-
   for (int i = 0; i < 6; ++i)
-  { 
-    
+  {
     if (command_buffer_->pop_value(CommandTypes::POSITION, i, data_out))
     {
       d->ctrl[i] = data_out;
@@ -142,11 +139,11 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
     // joint_acceleration_state = d->q
   }
 }
-mjModel* MujocoInitLoadObjects::init()
+void MujocoInitLoadObjects::init()
 {
   return getInstance().initialize_simulation();
 }
-mjModel* MujocoInitLoadObjects::initialize_simulation()
+void MujocoInitLoadObjects::initialize_simulation()
 {
   // (Test) Load XML manually for now and test the model
   try
@@ -162,7 +159,6 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
     {
       std::cout << std::flush << "Problem with model" << std::endl;
       std::cout << std::flush << err_str << std::endl;
-      return nullptr;
     }
 
     // To:Do Possible Object creation and spec editing here
@@ -183,12 +179,10 @@ mjModel* MujocoInitLoadObjects::initialize_simulation()
     joint_acceleration_input.resize(m->nq, 0.0);
 
     std::cout << std::flush << "Simulation Initialized" << std::endl;
-    return m;
   }
   catch (const std::exception& e)
   {
     std::cerr << e.what() << '\n';
-    return nullptr;
   }
 }
 

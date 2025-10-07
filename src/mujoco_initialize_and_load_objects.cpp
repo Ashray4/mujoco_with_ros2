@@ -28,10 +28,11 @@ namespace mujoco_with_ros2 {
 MujocoInitLoadObjects::MujocoInitLoadObjects() {}
 
 void MujocoInitLoadObjects::initialize_buffers(std::shared_ptr<CommandBuffer> c_buff,
-                                               std::shared_ptr<StateBuffer> s_buff)
+                                               std::shared_ptr<StateBuffer> s_buff,std::vector<int> joint_ids_)
 {
   command_buffer_ = c_buff;
   state_buffer_   = s_buff;
+  mujoco_joint_ids_ = joint_ids_;
 }
 // mouse button callback
 void MujocoInitLoadObjects::mouseButtonCB(GLFWwindow* window, int button, int act, int mods)
@@ -131,52 +132,22 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
       d->ctrl[i] = data_out;
     }
 
-    state_buffer_->push_value(CommandTypes::POSITION, i, *d->qpos);
-    state_buffer_->push_value(CommandTypes::VELOCITY, i, *d->qvel);
-    state_buffer_->push_value(CommandTypes::EFFORT, i, *d->qacc);
-    time_state[i] = d->time;
-    // joint_velocity_state[i] = d->qpvel
-    // joint_acceleration_state = d->q
+    state_buffer_->push_value(CommandTypes::POSITION, i, d->qpos[m->jnt_qposadr[mujoco_joint_ids_[i]]]);
+    state_buffer_->push_value(CommandTypes::VELOCITY, i, d->qvel[m->jnt_qposadr[mujoco_joint_ids_[i]]]);
+    state_buffer_->push_value(CommandTypes::EFFORT, i, d->qacc[m->jnt_qposadr[mujoco_joint_ids_[i]]]);
   }
 }
-void MujocoInitLoadObjects::init()
+void MujocoInitLoadObjects::init(mjModel* mujoco_model,mjData* mujoco_data)
 {
-  return getInstance().initialize_simulation();
+  return getInstance().initialize_simulation(mujoco_model,mujoco_data);
 }
-void MujocoInitLoadObjects::initialize_simulation()
+void MujocoInitLoadObjects::initialize_simulation(mjModel* mujoco_model,mjData* mujoco_data)
 {
   // (Test) Load XML manually for now and test the model
   try
   {
-    char err_str[1000];
-    int err_str_sz = 1000;
-    spec           = mj_parseXML(
-      "/home/saksham/checkout/thesis_ws/colcon_ws/src/mujoco_with_ros2/models/ur5e/urdf/scene.xml",
-      NULL,
-      err_str,
-      err_str_sz);
-    if (!spec)
-    {
-      std::cout << std::flush << "Problem with model" << std::endl;
-      std::cout << std::flush << err_str << std::endl;
-    }
-
-    // To:Do Possible Object creation and spec editing here
-
-    spec->option.disableactuator = 1;
-    spec->option.disableactuator = 2;
-
-    m = mj_compile(spec, NULL);
-    d = mj_makeData(m);
-
-    // Initialize the buffers
-    joint_positions_state.resize(m->nq, 0.0);
-    joint_velocity_state.resize(m->nq, 0.0);
-    joint_acceleration_state.resize(m->nq, 0.0);
-    time_state.resize(m->nq, 0.0);
-    joint_positions_input.resize(m->nq, 0.0);
-    joint_velocity_input.resize(m->nq, 0.0);
-    joint_acceleration_input.resize(m->nq, 0.0);
+    m = mujoco_model;
+    d = mujoco_data;
 
     std::cout << std::flush << "Simulation Initialized" << std::endl;
   }

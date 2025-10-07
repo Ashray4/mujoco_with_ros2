@@ -84,15 +84,7 @@ public:
   bool is_deleted = false;
 
   // Buffers for interaction with ROS2 Hardware_interface
-  // Joint states
-  std::vector<double> joint_positions_state;
-  std::vector<double> joint_velocity_state;
-  std::vector<double> joint_acceleration_state;
-  std::vector<double> time_state;
-  // Joint Inputs
-  std::vector<double> joint_positions_input;
-  std::vector<double> joint_velocity_input;
-  std::vector<double> joint_acceleration_input;
+  std::vector<int> mujoco_joint_ids_;
 
   // Joint Names
   std::vector<std::string> ur5e_joint_names;
@@ -104,9 +96,9 @@ public:
   // static Init method to return an static instance of initialized simulation (static because
   // otherwise the method doesn't point from an object and is dangling, static so it can be called
   // and persists and initiliaze zthe class)
-  static void init();
+  static void init(mjModel* mujoco_model,mjData* mujoco_data);
   // Initialize the Simulation and load objects
-  void initialize_simulation();
+  void initialize_simulation(mjModel* mujoco_model,mjData* mujoco_data);
 
   // Start Simulation loop and launch the rendering window
   static void start_simulation(bool single_thread = false);
@@ -137,7 +129,8 @@ public:
   void DeletingData();
 
   //provide shared buffers for connections
-  void initialize_buffers(std::shared_ptr<CommandBuffer> c_buff,std::shared_ptr<StateBuffer> s_buff);
+  void initialize_buffers(std::shared_ptr<CommandBuffer> c_buff,
+                                               std::shared_ptr<StateBuffer> s_buff,std::vector<int> joint_ids_);
 };
 
 

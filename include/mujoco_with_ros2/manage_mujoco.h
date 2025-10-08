@@ -27,7 +27,7 @@ private:
 
 public:
   ManageMujoco(int n_joints,
-               std::vector<std::string>& mujoco_joint_names,
+               std::vector<std::string>& mujoco_joint_names,CommandTypes control_mode = CommandTypes::POSITION,
                size_t queue_size = 1024);
   ~ManageMujoco();
 
@@ -52,5 +52,6 @@ public:
   
   std::shared_ptr<CommandBuffer> command_buffer_;
   std::shared_ptr<StateBuffer> state_buffer_;
+  CommandTypes control_mode_;
 };
 } // namespace mujoco_with_ros2

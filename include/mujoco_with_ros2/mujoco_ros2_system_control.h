@@ -84,6 +84,7 @@ protected:
 
 public:
   std::unique_ptr<ManageMujoco> mujoco_manager;
+  CommandTypes command_types_;
   std::vector<std::string> ur5e_joint_names;
   double read_data_;
   double write_data_;

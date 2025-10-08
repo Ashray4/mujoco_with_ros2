@@ -63,6 +63,7 @@ struct QueueBuffers
           for (int j = 0; j < num_joints; j++)
           {
             effort_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+            std::cout<<std::flush<<"i choose effort"<<std::endl;
           }
           break;
         default:
@@ -70,7 +71,7 @@ struct QueueBuffers
       }
     }
   }
-
+  CommandTypes get_command_type() { return command_types_[0]; }
   std::string& get_name(std::pair<CommandTypes, std::vector<QueuePtr> >& command_pair)
   {
     CommandTypes command_t = command_pair.first;
@@ -114,11 +115,12 @@ struct QueueBuffers
         }
         break;
       default:
+        // std::cout <<std::flush<<std::endl<< "COULDN'T PUSH BECAUSE WRONG COMMAND TYPE";
         break;
     }
   }
 
-  bool pop_value(CommandTypes type, int index,double& data)
+  bool pop_value(CommandTypes type, int index, double& data)
   {
     bool success = false;
     switch (type)
@@ -139,12 +141,13 @@ struct QueueBuffers
         if (!effort_values_.empty())
         {
           success = effort_values_[index]->pop(data);
+          //std::cout <<std::flush<< data<<std::endl;
         }
         break;
       default:
         break;
     }
-
+    //std::cout<<std::flush<<"after: "<<success<<std::endl;
     return success;
   }
 };
@@ -155,7 +158,7 @@ struct CommandBuffer : QueueBuffers
     : QueueBuffers(1024, 6, {CommandTypes::POSITION})
   {
   }
-  CommandBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes>& command_type)
+  CommandBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes> command_type)
     : QueueBuffers(q_size_, n_joints_, command_type)
   {
   }
@@ -168,7 +171,7 @@ struct StateBuffer : QueueBuffers
     : QueueBuffers(1024, 6, {CommandTypes::POSITION, CommandTypes::VELOCITY, CommandTypes::EFFORT})
   {
   }
-  StateBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes>& command_type)
+  StateBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes> command_type)
     : QueueBuffers(q_size_, n_joints_, command_type)
   {
   }

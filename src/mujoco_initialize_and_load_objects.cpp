@@ -33,6 +33,7 @@ void MujocoInitLoadObjects::initialize_buffers(std::shared_ptr<CommandBuffer> c_
   command_buffer_ = c_buff;
   state_buffer_   = s_buff;
   mujoco_joint_ids_ = joint_ids_;
+  command_type_ = command_buffer_->get_command_type();
 }
 // mouse button callback
 void MujocoInitLoadObjects::mouseButtonCB(GLFWwindow* window, int button, int act, int mods)
@@ -126,10 +127,13 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
   // Check if controls are equal
 
   for (int i = 0; i < 6; ++i)
-  {
-    if (command_buffer_->pop_value(CommandTypes::POSITION, i, data_out))
+  { 
+    auto test = command_buffer_->pop_value(command_type_, i, data_out);
+    std::cout<<std::flush<<"test: "<<std::endl<<test;
+    if (test)
     {
       d->ctrl[i] = data_out;
+      std::cout<<std::flush<<std::endl<<data_out;
     }
 
     state_buffer_->push_value(CommandTypes::POSITION, i, d->qpos[m->jnt_qposadr[mujoco_joint_ids_[i]]]);

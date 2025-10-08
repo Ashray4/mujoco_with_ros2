@@ -41,85 +41,83 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
     ur5e_joint_names[i] = info_.joints[i].name;
   }
 
-  mujoco_manager = std::make_unique<ManageMujoco>(6, ur5e_joint_names);
+  bool test = true;
 
+  if (info_.joints[0].command_interfaces[0].name == hardware_interface::HW_IF_POSITION)
+  {
+    command_types_ = CommandTypes::POSITION;
+    std::cout << std::endl << std::flush << "I choose Position" << std::endl;
+  }
+  if (info_.joints[0].command_interfaces[0].name == hardware_interface::HW_IF_VELOCITY)
+  {
+    command_types_ = CommandTypes::VELOCITY;
+  }
+  if (info_.joints[0].command_interfaces[0].name == hardware_interface::HW_IF_EFFORT)
+  {
+    command_types_ = CommandTypes::EFFORT;
+    std::cout << std::endl << std::flush << "I choose Effort" << std::endl;
+  }
+  for (const hardware_interface::ComponentInfo& joint : info_.joints)
+  {
+    if (joint.command_interfaces.size() != 1)
+    {
+      RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
+                   "Joint '%s' has %zu command interfaces found. 1 expected.",
+                   joint.name.c_str(),
+                   joint.command_interfaces.size());
+      return hardware_interface::CallbackReturn::ERROR;
+    }
 
-  // for (const hardware_interface::ComponentInfo& joint : info_.joints)
-  // {
+    if ((joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION) &&
+        (joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY) &&
+        (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT))
+    {
+      RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
+                   "Joint '%s' have %s command interfaces found. '%s','%s' or '%s' expected.",
+                   joint.name.c_str(),
+                   joint.command_interfaces[0].name.c_str(),
+                   hardware_interface::HW_IF_POSITION,
+                   hardware_interface::HW_IF_VELOCITY,
+                   hardware_interface::HW_IF_EFFORT);
+      return hardware_interface::CallbackReturn::ERROR;
+    }
+    if (joint.state_interfaces.size() != 3)
+    {
+      RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
+                   "Joint '%s' has %zu state interface. 3 expected.",
+                   joint.name.c_str(),
+                   joint.state_interfaces.size());
+      return hardware_interface::CallbackReturn::ERROR;
+    }
 
-  //   // if (joint.command_interfaces.size() != 3)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' has %zu command interfaces found. 1 expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.command_interfaces.size());
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-
-  //   // if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' have %s command interfaces found. '%s' expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.command_interfaces[0].name.c_str(),
-  //   //                hardware_interface::HW_IF_POSITION);
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-  //   // if (joint.command_interfaces[1].name != hardware_interface::HW_IF_VELOCITY)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' have %s command interfaces found. '%s' expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.command_interfaces[0].name.c_str(),
-  //   //                hardware_interface::HW_IF_VELOCITY);
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-  //   // if (joint.command_interfaces[2].name != hardware_interface::HW_IF_EFFORT)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' have %s command interfaces found. '%s' expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.command_interfaces[0].name.c_str(),
-  //   //                hardware_interface::HW_IF_EFFORT);
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-  //   // if (joint.state_interfaces.size() != 3)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' has %zu state interface. 3 expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.state_interfaces.size());
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-
-  //   // if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' have '%s' as a state interface. '%s' expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.state_interfaces[0].name.c_str(),
-  //   //                hardware_interface::HW_IF_POSITION);
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-  //   // if (joint.state_interfaces[1].name != hardware_interface::HW_IF_VELOCITY)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' have '%s' as second state interface. '%s' expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.state_interfaces[1].name.c_str(),
-  //   //                hardware_interface::HW_IF_VELOCITY);
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-  //   // if (joint.state_interfaces[1].name != hardware_interface::HW_IF_EFFORT)
-  //   // {
-  //   //   RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
-  //   //                "Joint '%s' have '%s' as second state interface. '%s' expected.",
-  //   //                joint.name.c_str(),
-  //   //                joint.state_interfaces[1].name.c_str(),
-  //   //                hardware_interface::HW_IF_EFFORT);
-  //   //   return hardware_interface::CallbackReturn::ERROR;
-  //   // }
-  // }
+    if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
+    {
+      RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
+                   "Joint '%s' have '%s' as a state interface. '%s' expected.",
+                   joint.name.c_str(),
+                   joint.state_interfaces[0].name.c_str(),
+                   hardware_interface::HW_IF_POSITION);
+      return hardware_interface::CallbackReturn::ERROR;
+    }
+    if (joint.state_interfaces[1].name != hardware_interface::HW_IF_VELOCITY)
+    {
+      RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
+                   "Joint '%s' have '%s' as second state interface. '%s' expected.",
+                   joint.name.c_str(),
+                   joint.state_interfaces[1].name.c_str(),
+                   hardware_interface::HW_IF_VELOCITY);
+      return hardware_interface::CallbackReturn::ERROR;
+    }
+    if (joint.state_interfaces[2].name != hardware_interface::HW_IF_EFFORT)
+    {
+      RCLCPP_FATAL(rclcpp::get_logger("MujocowithRos2SystemHardware"),
+                   "Joint '%s' have '%s' as second state interface. '%s' expected.",
+                   joint.name.c_str(),
+                   joint.state_interfaces[1].name.c_str(),
+                   hardware_interface::HW_IF_EFFORT);
+      return hardware_interface::CallbackReturn::ERROR;
+    }
+  }
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -152,14 +150,22 @@ MujocowithRos2SystemHardware::export_command_interfaces()
 
   for (size_t i = 0; i < info_.joints.size(); ++i)
   {
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &joint_command_pos_vector_[i]));
+    if (info_.joints[i].command_interfaces[0].name == hardware_interface::HW_IF_POSITION)
+    {
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &joint_command_pos_vector_[i]));
+    }
 
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &joint_command_vel_vector_[i]));
-
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_command_eff_vector_[i]));
+    if (info_.joints[i].command_interfaces[0].name == hardware_interface::HW_IF_VELOCITY)
+    {
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &joint_command_vel_vector_[i]));
+    }
+    if (info_.joints[i].command_interfaces[0].name == hardware_interface::HW_IF_EFFORT)
+    {
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_command_eff_vector_[i]));
+    }
   }
 
   return command_interfaces;
@@ -171,6 +177,8 @@ MujocowithRos2SystemHardware::on_configure(const rclcpp_lifecycle::State& /*prev
 
   // Initialize simulation with initial joint state
 
+
+  mujoco_manager = std::make_unique<ManageMujoco>(6, ur5e_joint_names, command_types_);
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully configured!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -186,7 +194,7 @@ MujocowithRos2SystemHardware::on_cleanup(const rclcpp_lifecycle::State& /*previo
   {
     mujoco_with_ros2::MujocoInitLoadObjects::DeleteData();
   }
-  
+
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully cleaned up!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -241,10 +249,11 @@ hardware_interface::return_type
 MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
                                     const rclcpp::Duration& /*period*/)
 {
-    for (size_t i = 0; i < info_.joints.size(); i++)
-    {
-      mujoco_manager->command_buffer_->push_value(CommandTypes::POSITION,i,joint_command_pos_vector_[i]);
-    }
+  for (size_t i = 0; i < info_.joints.size(); i++)
+  {
+    mujoco_manager->command_buffer_->push_value(command_types_, i, joint_command_eff_vector_[i]);
+    std::cout << std::flush << joint_command_eff_vector_[i] << std::endl;
+  }
 
   return hardware_interface::return_type::OK;
 }

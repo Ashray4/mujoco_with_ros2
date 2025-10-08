@@ -85,7 +85,7 @@ public:
 
   // Buffers for interaction with ROS2 Hardware_interface
   std::vector<int> mujoco_joint_ids_;
-
+  CommandTypes command_type_;
   // Joint Names
   std::vector<std::string> ur5e_joint_names;
 

@@ -4,12 +4,15 @@ namespace mujoco_with_ros2 {
 
 ManageMujoco::ManageMujoco(int n_joints,
                            std::vector<std::string>& mujoco_joint_names,
+                           CommandTypes control_mode,
                            size_t queue_size)
   : n_joints_{n_joints}
   , mujoco_joint_names_{mujoco_joint_names}
+  , control_mode_(control_mode)
   , queue_size_{queue_size}
   , load_mujoco_object_simulation_{MujocoInitLoadObjects::getInstance()}
-  , command_buffer_(std::make_shared<CommandBuffer>())
+  , command_buffer_(
+      std::make_shared<CommandBuffer>(1024, n_joints_, std::vector<CommandTypes>{control_mode_}))
   , state_buffer_(std::make_shared<StateBuffer>())
 {
   initialize_mujoco_simulation();
@@ -20,9 +23,10 @@ ManageMujoco::ManageMujoco(int n_joints,
       mj_name2id(mujoco_model, mjOBJ_JOINT, mujoco_joint_names_[i].c_str()));
 
     // initialize commands to 0 and add the command type logic later
-    command_buffer_->push_value(CommandTypes::POSITION, i, 0.0);
+    command_buffer_->push_value(control_mode_, i, 0.0);
   }
-  load_mujoco_object_simulation_.initialize_buffers(command_buffer_, state_buffer_,mujoco_joint_ids_);
+  load_mujoco_object_simulation_.initialize_buffers(
+    command_buffer_, state_buffer_, mujoco_joint_ids_);
 }
 ManageMujoco::~ManageMujoco()
 {
@@ -43,15 +47,47 @@ void ManageMujoco::initialize_mujoco_simulation()
     std::cout << std::flush << err_str << std::endl;
   }
 
-  // To:Do Possible Object creation and spec editing here
-
-  mujoco_spec->option.disableactuator = 1;
-  mujoco_spec->option.disableactuator = 2;
-
   mujoco_model = mj_compile(mujoco_spec, NULL);
-  mujoco_data  = mj_makeData(mujoco_model);
+  if (!mujoco_model)
+  {
+    std::cout << "Failed to compile model" << std::endl;
+  }
+  mujoco_data = mj_makeData(mujoco_model);
 
-  mujoco_with_ros2::MujocoInitLoadObjects::init(mujoco_model,mujoco_data);
+  int actuator_mode = 2; // Change this to select mode
+
+  if (control_mode_ == CommandTypes::POSITION)
+  {
+    actuator_mode = 0;
+  }
+  else if (control_mode_ == CommandTypes::VELOCITY)
+  {
+    actuator_mode = 1;
+  }
+  else if (control_mode_ == CommandTypes::EFFORT)
+  {
+    actuator_mode = 2;
+  }
+   std::cout << std::flush <<"actuator_mode: "<<actuator_mode << std::endl;
+  
+   // Disable all actuators first
+  for (int i = 0; i < mujoco_model->nu; i++)
+  {
+    mujoco_model->actuator_actlimited[i] = 0;
+    // std::cout << std::flush << i << std::endl;
+  }
+
+  // Enable only the selected group
+  for (int i = 0; i < mujoco_model->nu; i++)
+  {
+    if (mujoco_model->actuator_group[i] == actuator_mode)
+    {
+      mujoco_model->actuator_actlimited[i] = 1; // Enable this actuator
+      std::cout << std::flush << i << std::endl;
+    }
+  }
+
+  mujoco_with_ros2::MujocoInitLoadObjects::init(mujoco_model, mujoco_data);
 }
 int ManageMujoco::totalJoints()
 {

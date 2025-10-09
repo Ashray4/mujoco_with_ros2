@@ -61,7 +61,8 @@ def generate_launch_description():
     # Controllers to spawn
     controllers = [
         "joint_state_broadcaster",
-        "effort_controller",
+        "interpolation_controller"
+        #"effort_controller",
         #"joint_trajectory_controller"
     ]
 

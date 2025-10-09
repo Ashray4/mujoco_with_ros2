@@ -43,6 +43,10 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
 
   bool test = true;
 
+  std::cout << std::flush << info_.joints[0].command_interfaces[0].name << std::endl;
+  std::cout << std::flush << info_.joints[1].command_interfaces[0].name << std::endl;
+  std::cout << std::flush << info_.joints[2].command_interfaces[0].name << std::endl;
+
   if (info_.joints[0].command_interfaces[0].name == hardware_interface::HW_IF_POSITION)
   {
     command_types_ = CommandTypes::POSITION;
@@ -251,8 +255,27 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
 {
   for (size_t i = 0; i < info_.joints.size(); i++)
   {
-    mujoco_manager->command_buffer_->push_value(command_types_, i, joint_command_eff_vector_[i]);
-    std::cout << std::flush << joint_command_eff_vector_[i] << std::endl;
+    bool success = false;
+
+    if (command_types_ == mujoco_with_ros2::CommandTypes::POSITION)
+    {
+      success = mujoco_manager->command_buffer_->push_value(
+        command_types_, i, joint_command_pos_vector_[i]);
+      std::cout << std::flush << "Pushing effort[" << i << "]: "
+               << joint_command_pos_vector_[i] << " success: " << success << std::endl;
+    }
+    else if (command_types_ == mujoco_with_ros2::CommandTypes::VELOCITY)
+    {
+      success = mujoco_manager->command_buffer_->push_value(
+        command_types_, i, joint_command_vel_vector_[i]);
+    }
+    else if (command_types_ == mujoco_with_ros2::CommandTypes::EFFORT)
+    {
+      success = mujoco_manager->command_buffer_->push_value(
+        command_types_, i, joint_command_eff_vector_[i]);
+      // std::cout << std::flush << "Pushing effort[" << i << "]: "
+      //           << joint_command_eff_vector_[i] << " success: " << success << std::endl;
+    }
   }
 
   return hardware_interface::return_type::OK;

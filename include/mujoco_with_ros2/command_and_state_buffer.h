@@ -39,38 +39,45 @@ struct QueueBuffers
     initialize_queue();
     prev_data.resize(n_joints);
   }
-  void initialize_queue()
-  {
-    auto command_size = command_types_.size();
+void initialize_queue()
+{
+  auto command_size = command_types_.size();
+  
+  std::cout << "Initializing with " << command_size << " command types" << std::endl;
 
-    for (int i = 0; i < command_size; i++)
+  for (int i = 0; i < command_size; i++)
+  { 
+    std::cout<<std::flush<<i<<std::endl;
+    switch (command_types_[i])
     {
-      switch (command_types_[i])
-      {
-        case CommandTypes::POSITION:
-          for (int j = 0; j < num_joints; j++)
-          {
-            position_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
-          }
-          break;
-        case CommandTypes::VELOCITY:
-          for (int j = 0; j < num_joints; j++)
-          {
-            velocity_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
-          }
-          break;
-        case CommandTypes::EFFORT:
-          for (int j = 0; j < num_joints; j++)
-          {
-            effort_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
-            std::cout<<std::flush<<"i choose effort"<<std::endl;
-          }
-          break;
-        default:
-          break;
-      }
+      case CommandTypes::POSITION:
+        std::cout << "Initializing POSITION queues" << std::endl;
+        for (int j = 0; j < num_joints; j++)
+        {
+          position_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+        }
+        break;
+      case CommandTypes::VELOCITY:
+        std::cout << "Initializing VELOCITY queues" << std::endl;
+        for (int j = 0; j < num_joints; j++)
+        {
+          velocity_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+        }
+        break;
+      case CommandTypes::EFFORT:
+        std::cout << "Initializing EFFORT queues for " << num_joints << " joints" << std::endl;
+        for (int j = 0; j < num_joints; j++)
+        {
+          effort_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+        }
+        std::cout << "EFFORT queues size: " << effort_values_.size() << std::endl;
+        break;
+      default:
+        std::cout<<std::flush<<"Invalid COMMAND TYPE"<<std::endl;
+        break;
     }
   }
+}
   CommandTypes get_command_type() { return command_types_[0]; }
   std::string& get_name(std::pair<CommandTypes, std::vector<QueuePtr> >& command_pair)
   {
@@ -92,32 +99,34 @@ struct QueueBuffers
     return command_name;
   }
 
-  void push_value(CommandTypes type, int index, double value)
-  {
+  bool push_value(CommandTypes type, int index, double value)
+  { 
+    bool success = false;
     switch (type)
     {
       case CommandTypes::POSITION:
         if (!position_values_.empty())
         {
-          static_cast<void>(position_values_[index]->push(value));
+          success = position_values_[index]->push(value);
         }
         break;
       case CommandTypes::VELOCITY:
         if (!velocity_values_.empty())
         {
-          static_cast<void>(velocity_values_[index]->push(value));
+          success = velocity_values_[index]->push(value);
         }
         break;
       case CommandTypes::EFFORT:
         if (!effort_values_.empty())
         {
-          static_cast<void>(effort_values_[index]->push(value));
+          success = effort_values_[index]->push(value);
         }
         break;
       default:
-        // std::cout <<std::flush<<std::endl<< "COULDN'T PUSH BECAUSE WRONG COMMAND TYPE";
+        std::cout <<std::flush<<std::endl<< "COULDN'T PUSH BECAUSE WRONG COMMAND TYPE";
         break;
     }
+    return success;
   }
 
   bool pop_value(CommandTypes type, int index, double& data)
@@ -141,7 +150,7 @@ struct QueueBuffers
         if (!effort_values_.empty())
         {
           success = effort_values_[index]->pop(data);
-          //std::cout <<std::flush<< data<<std::endl;
+          //std::cout <<std::flush<< "data: "<<data<<std::endl;
         }
         break;
       default:

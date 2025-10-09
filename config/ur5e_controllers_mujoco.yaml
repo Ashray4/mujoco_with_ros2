@@ -111,7 +111,7 @@ joint_trajectory_controller:
       - wrist_2_joint
       - wrist_3_joint
     command_interfaces:
-      - position
+      - effort
     state_interfaces:
       - position
       - velocity

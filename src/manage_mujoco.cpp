@@ -12,7 +12,7 @@ ManageMujoco::ManageMujoco(int n_joints,
   , queue_size_{queue_size}
   , load_mujoco_object_simulation_{MujocoInitLoadObjects::getInstance()}
   , command_buffer_(
-      std::make_shared<CommandBuffer>(1024, n_joints_, std::vector<CommandTypes>{control_mode_}))
+      std::make_shared<CommandBuffer>(1024, n_joints_, std::vector<CommandTypes>{control_mode}))
   , state_buffer_(std::make_shared<StateBuffer>())
 {
   initialize_mujoco_simulation();
@@ -54,7 +54,7 @@ void ManageMujoco::initialize_mujoco_simulation()
   }
   mujoco_data = mj_makeData(mujoco_model);
 
-  int actuator_mode = 2; // Change this to select mode
+  int actuator_mode = 0; // Change this to select mode
 
   if (control_mode_ == CommandTypes::POSITION)
   {

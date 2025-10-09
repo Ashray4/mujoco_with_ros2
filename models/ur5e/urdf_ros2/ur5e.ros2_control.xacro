@@ -137,7 +137,7 @@
             <param name="position_ki">0</param>
             <param name="position_kd">5</param>
             <param name="position_i_max">10000</param>
-            <command_interface name="effort" />
+            <command_interface name="position" />
           </xacro:if>
           <xacro:unless value="${ros2_control_hardware_type == 'mujoco'}">
             <command_interface name="velocity" />

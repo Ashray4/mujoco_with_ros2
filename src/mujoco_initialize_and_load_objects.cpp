@@ -129,11 +129,11 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
   for (int i = 0; i < 6; ++i)
   { 
     auto test = command_buffer_->pop_value(command_type_, i, data_out);
-    std::cout<<std::flush<<"test: "<<std::endl<<test;
+    //std::cout<<std::flush<<"test: "<<test<<std::endl;
     if (test)
     {
       d->ctrl[i] = data_out;
-      std::cout<<std::flush<<std::endl<<data_out;
+      //std::cout<<std::flush<<std::endl<<data_out;
     }
 
     state_buffer_->push_value(CommandTypes::POSITION, i, d->qpos[m->jnt_qposadr[mujoco_joint_ids_[i]]]);

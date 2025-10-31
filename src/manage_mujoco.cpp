@@ -5,7 +5,8 @@ namespace mujoco_with_ros2 {
 ManageMujoco::ManageMujoco(int n_joints,
                            std::vector<std::string>& mujoco_joint_names,
                            CommandTypes control_mode,
-                           size_t queue_size)
+                           size_t queue_size,
+                           std::string end_effector)
   : n_joints_{n_joints}
   , mujoco_joint_names_{mujoco_joint_names}
   , control_mode_(control_mode)
@@ -14,19 +15,50 @@ ManageMujoco::ManageMujoco(int n_joints,
   , command_buffer_(
       std::make_shared<CommandBuffer>(1024, n_joints_, std::vector<CommandTypes>{control_mode}))
   , state_buffer_(std::make_shared<StateBuffer>())
+  , sensor_buffer_(
+      std::make_shared<StateBuffer>(1024, 6, std::vector<CommandTypes>{CommandTypes::SENSOR}))
+  , tool(end_effector)
 {
   initialize_mujoco_simulation();
   mujoco_joint_ids_.reserve(n_joints_);
+
+  // Get Joint Ids from joint names
   for (int i = 0; i < n_joints_; i++)
   {
     mujoco_joint_ids_.push_back(
       mj_name2id(mujoco_model, mjOBJ_JOINT, mujoco_joint_names_[i].c_str()));
-
     // initialize commands to 0 and add the command type logic later
     command_buffer_->push_value(control_mode_, i, 0.0);
   }
+
+  // TO:Do ( later automated way of doing this ) get sensor information ( size 3 )
+  mujoco_sensor_ids_.reserve(6);
+
+  for (int i = 0; i < mujoco_model->nsensor; i++)
+  { 
+    std::cout<<std::flush<<mj_id2name(mujoco_model, mjOBJ_SENSOR, i)<<std::endl;
+    if ( std::string(mj_id2name(mujoco_model, mjOBJ_SENSOR, i)) == "motor_force" ||
+        std::string(mj_id2name(mujoco_model, mjOBJ_SENSOR, i)) == "motor_torque")
+    {
+      int dim = mujoco_model->sensor_dim[i];
+      for (int j = 0; j < dim; j++)
+      { int sum = i + j;
+        if (i > 0)
+        {
+          sum = ( i - 1 ) + j + mujoco_model->sensor_dim[0];
+        }       
+        mujoco_sensor_ids_.push_back(sum);
+      }
+    }
+  }
+  
+  for (size_t i = 0; i < mujoco_sensor_ids_.size(); i++)
+  {
+    std::cout<<std::flush<<mujoco_sensor_ids_[i]<<std::endl;
+  }
+  
   load_mujoco_object_simulation_.initialize_buffers(
-    command_buffer_, state_buffer_, mujoco_joint_ids_);
+    command_buffer_, state_buffer_, sensor_buffer_, mujoco_joint_ids_, mujoco_sensor_ids_);
 }
 ManageMujoco::~ManageMujoco()
 {
@@ -68,9 +100,9 @@ void ManageMujoco::initialize_mujoco_simulation()
   {
     actuator_mode = 2;
   }
-   std::cout << std::flush <<"actuator_mode: "<<actuator_mode << std::endl;
-  
-   // Disable all actuators first
+  std::cout << std::flush << "actuator_mode: " << actuator_mode << std::endl;
+
+  // Disable all actuators first
   for (int i = 0; i < mujoco_model->nu; i++)
   {
     mujoco_model->actuator_actlimited[i] = 0;

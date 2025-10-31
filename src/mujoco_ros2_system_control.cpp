@@ -28,6 +28,7 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   joint_pos_vector_.resize(info.joints.size(), 0.0);
   joint_vel_vector_.resize(info.joints.size(), 0.0);
   joint_eff_vector_.resize(info.joints.size(), 0.0);
+  sensor_vector_.resize(info.joints.size(), 0.0);
 
   joint_command_pos_vector_.resize(info.joints.size(), 0.0);
   joint_command_vel_vector_.resize(info.joints.size(), 0.0);
@@ -143,6 +144,22 @@ MujocowithRos2SystemHardware::export_state_interfaces()
       info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_eff_vector_[i]));
   }
 
+  // expose force.x, force.y, force.z
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("motor_fts", "force.x", &sensor_vector_[0]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("motor_fts", "force.y", &sensor_vector_[1]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("motor_fts", "force.z", &sensor_vector_[2]));
+
+  // expose torque.x, torque.y, torque.z
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("motor_fts", "torque.x", &sensor_vector_[3]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("motor_fts", "torque.y", &sensor_vector_[4]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("motor_fts", "torque.z", &sensor_vector_[5]));
+
 
   return state_interfaces;
 }
@@ -246,6 +263,14 @@ hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp:
     }
   }
 
+  for (size_t i = 0; i < 6; i++)
+  {
+    if (mujoco_manager->sensor_buffer_->pop_value(
+          mujoco_with_ros2::CommandTypes::SENSOR, i, read_data_))
+    {
+      sensor_vector_[i] = read_data_;
+    }
+  }
   return hardware_interface::return_type::OK;
 }
 
@@ -261,8 +286,8 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
     {
       success = mujoco_manager->command_buffer_->push_value(
         command_types_, i, joint_command_pos_vector_[i]);
-      std::cout << std::flush << "Pushing effort[" << i << "]: "
-               << joint_command_pos_vector_[i] << " success: " << success << std::endl;
+      // std::cout << std::flush << "Pushing effort[" << i << "]: "
+      //          << joint_command_pos_vector_[i] << " success: " << success << std::endl;
     }
     else if (command_types_ == mujoco_with_ros2::CommandTypes::VELOCITY)
     {

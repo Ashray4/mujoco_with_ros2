@@ -1,0 +1,6 @@
+Wed Oct 29 22:04:42 2025
+WARNING: Pre-allocated visual geom buffer is full. Increase maxgeom above 0. Time = 6.1560.
+
+Wed Oct 29 22:04:42 2025
+ERROR: mjv_room2model: mjvScene scale too small
+

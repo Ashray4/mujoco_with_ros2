@@ -14,7 +14,8 @@ enum class CommandTypes
   POSITION,
   VELOCITY,
   EFFORT,
-
+  SENSOR
+  
 };
 struct QueueBuffers
 {
@@ -27,6 +28,7 @@ struct QueueBuffers
   std::vector<QueuePtr> position_values_;
   std::vector<QueuePtr> velocity_values_;
   std::vector<QueuePtr> effort_values_;
+  std::vector<QueuePtr> sensor_values_;
 
   std::string command_name;
   std::vector<CommandTypes> command_types_;
@@ -70,8 +72,15 @@ void initialize_queue()
         {
           effort_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
         }
-        std::cout << "EFFORT queues size: " << effort_values_.size() << std::endl;
         break;
+      case CommandTypes::SENSOR:
+        std::cout << "Initializing SENSOR queues for " << num_joints << " joints" << std::endl;
+        for (int j = 0; j < num_joints; j++)
+        {
+          sensor_values_.emplace_back(std::make_unique<QueueType>(queue_size_));
+        }
+        break;
+
       default:
         std::cout<<std::flush<<"Invalid COMMAND TYPE"<<std::endl;
         break;
@@ -121,6 +130,11 @@ void initialize_queue()
         {
           success = effort_values_[index]->push(value);
         }
+      case CommandTypes::SENSOR:
+        if (!sensor_values_.empty())
+        {
+          success = sensor_values_[index]->push(value);
+        }
         break;
       default:
         std::cout <<std::flush<<std::endl<< "COULDN'T PUSH BECAUSE WRONG COMMAND TYPE";
@@ -152,6 +166,12 @@ void initialize_queue()
           success = effort_values_[index]->pop(data);
           //std::cout <<std::flush<< "data: "<<data<<std::endl;
         }
+      case CommandTypes::SENSOR:
+        if (!sensor_values_.empty())
+        {
+          success = sensor_values_[index]->pop(data);
+        }
+        break;
         break;
       default:
         break;

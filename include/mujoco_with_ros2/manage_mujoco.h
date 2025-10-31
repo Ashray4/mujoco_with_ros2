@@ -17,6 +17,7 @@ private:
   int n_joints_;
   std::vector<std::string> mujoco_joint_names_;
   std::vector<int> mujoco_joint_ids_;
+  std::vector<int> mujoco_sensor_ids_;
 
   // Mujoco Simulation Variables
   size_t queue_size_;
@@ -28,7 +29,7 @@ private:
 public:
   ManageMujoco(int n_joints,
                std::vector<std::string>& mujoco_joint_names,CommandTypes control_mode = CommandTypes::POSITION,
-               size_t queue_size = 1024);
+               size_t queue_size = 1024, std::string end_effector = "tool0");
   ~ManageMujoco();
 
   int totalJoints();
@@ -52,6 +53,9 @@ public:
   
   std::shared_ptr<CommandBuffer> command_buffer_;
   std::shared_ptr<StateBuffer> state_buffer_;
+  std::shared_ptr<StateBuffer> sensor_buffer_;
   CommandTypes control_mode_;
+  std::string tool;
+
 };
 } // namespace mujoco_with_ros2

@@ -159,7 +159,7 @@
       <xacro:configure_joint joint_name="${tf_prefix}wrist_2_joint"      initial_positions="${initial_positions}" joint_name_wo_prefix="wrist_2_joint"/>
       <xacro:configure_joint joint_name="${tf_prefix}wrist_3_joint"      initial_positions="${initial_positions}" joint_name_wo_prefix="wrist_3_joint"/>
 
-      <!-- <sensor name="${tf_prefix}motor_fts">
+      <sensor name="${tf_prefix}motor_fts">
         <state_interface name="force.x" />
         <state_interface name="force.y" />
         <state_interface name="force.z" />
@@ -167,7 +167,7 @@
         <state_interface name="torque.y" />
         <state_interface name="torque.z" />
         <param name="frame_id">${tf_prefix}wrist_3_link-${tf_prefix}tool0_fixed_joint</param>
-      </sensor> -->
+      </sensor>
     </ros2_control>
   </xacro:macro>
 

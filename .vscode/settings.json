@@ -111,6 +111,7 @@
         "__split_buffer": "cpp",
         "command_and_state_buffer,h": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "__bit_reference": "cpp"
     }
 }

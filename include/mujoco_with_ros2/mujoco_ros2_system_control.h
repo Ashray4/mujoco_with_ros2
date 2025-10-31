@@ -78,6 +78,7 @@ protected:
   std::vector<double> joint_pos_vector_;
   std::vector<double> joint_vel_vector_;
   std::vector<double> joint_eff_vector_;
+  std::vector<double> sensor_vector_;
   std::vector<double> joint_command_pos_vector_;
   std::vector<double> joint_command_vel_vector_;
   std::vector<double> joint_command_eff_vector_;

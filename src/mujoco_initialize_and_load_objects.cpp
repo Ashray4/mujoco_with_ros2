@@ -68,32 +68,6 @@ void MujocoInitLoadObjects::updateUI()
   mjui_update(-1, -1, &ui1, &uistate, &con);
 }
 
-void MujocoInitLoadObjects::uiEvent(mjuiItem* item)
-{
-  if (!item)
-    return;
-
-  // Handle buttons by name
-  if (strcmp(item->name, "Save XML") == 0)
-  {
-    mj_saveLastXML("saved_model.xml", m, NULL, 0);
-    printf("Model saved to saved_model.xml\n");
-  }
-  else if (strcmp(item->name, "Save Model") == 0)
-  {
-    mj_saveModel(m, "saved_model.mjb", NULL, 0);
-    printf("Model saved to saved_model.mjb\n");
-  }
-  else if (strcmp(item->name, "Reset") == 0)
-  {
-    mj_resetData(m, d);
-    printf("Simulation reset\n");
-  }
-  else if (strcmp(item->name, "Quit") == 0)
-  {
-    glfwSetWindowShouldClose(glfwGetCurrentContext(), 1);
-  }
-}
 
 // keyboard callback
 void MujocoInitLoadObjects::keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods)
@@ -107,93 +81,24 @@ void MujocoInitLoadObjects::keyboardCBImpl([[maybe_unused]] GLFWwindow* window,
                                            int act,
                                            [[maybe_unused]] int mods)
 {
-  // Only process key press and repeat, not release
-  if (act == GLFW_RELEASE)
+  if (act == GLFW_PRESS)
   {
-    return;
-  }
-
-  // Update modifier key state in UI
-  uistate.shift   = (mods & GLFW_MOD_SHIFT);
-  uistate.alt     = (mods & GLFW_MOD_ALT);
-  uistate.control = (mods & GLFW_MOD_CONTROL);
-
-  // Let UI handle event FIRST if mouse is over UI
-  mjuiItem* item = mjui_event(&ui0, &uistate, &con);
-  if (!item)
-  {
-    item = mjui_event(&ui1, &uistate, &con);
-  }
-
-  // If UI handled the event (button clicked, etc.)
-  if (item)
-  {
-    uiEvent(item);
-    return; // UI consumed the event
-  }
-
-
-  // --------------------------------------------------------------------
-  // Handle UI visibility toggles
-  // --------------------------------------------------------------------
-  if (key == GLFW_KEY_TAB)
-  {
-    if (uistate.shift)
+    if (mods & GLFW_MOD_SHIFT)
     {
-      // Shift+Tab: Toggle RIGHT UI
-      ui1_enable = !ui1_enable;
+      // Toggle UI panel with Shift key
+      ui_visible = !ui_visible;
+      std::cout << std::flush << (ui_visible ? "UI opened\n" : "UI closed\n") << std::endl;
     }
-    else
+    else if (key == GLFW_KEY_SPACE)
     {
-      // Tab: Toggle LEFT UI
-      ui0_enable = !ui0_enable;
-    }
-    return;
-  }
-
-  // --------------------------------------------------------------------
-  // Handle UI section expand/collapse
-  // Note: This is typically done with double-click, but you can add
-  // keyboard shortcuts here if desired
-  // --------------------------------------------------------------------
-
-  // --------------------------------------------------------------------
-  // Your existing keyboard shortcuts
-  // --------------------------------------------------------------------
-  switch (key)
-  {
-    case GLFW_KEY_SPACE:
       paused = !paused;
-      break;
-
-    case GLFW_KEY_BACKSPACE:
-      mj_resetData(m, d);
-      break;
-
-    case GLFW_KEY_ESCAPE:
-      glfwSetWindowShouldClose(window, 1);
-      break;
-
-    case GLFW_KEY_C:
-      show_contact = !show_contact;
-      break;
-
-    case GLFW_KEY_F:
-      show_forces = !show_forces;
-      break;
-
-    case GLFW_KEY_W:
-      wireframe = !wireframe;
-      break;
-
-    case GLFW_KEY_T:
-      transparent = !transparent;
-      break;
-
-      // Add more shortcuts as needed
+      std::cout << (paused ? "Paused\n" : "Running\n");
+    }
+    else if (key == GLFW_KEY_ESCAPE)
+    {
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
   }
-
-  updateUI();
 }
 
 
@@ -229,23 +134,6 @@ void MujocoInitLoadObjects::mouseButtonCBImpl(GLFWwindow* window,
   // Get mouse position
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
-
-  // Update UI mouse position
-  uistate.x = (int)xpos;
-  uistate.y = (int)ypos;
-
-  // Let UI handle the event
-  mjuiItem* item = mjui_event(&ui0, &uistate, &con);
-  if (!item)
-  {
-    item = mjui_event(&ui1, &uistate, &con);
-  }
-
-  // Handle UI button clicks
-  if (item)
-  {
-    uiEvent(item);
-  }
 }
 
 
@@ -257,15 +145,6 @@ void MujocoInitLoadObjects::mouseMoveCB(GLFWwindow* window, double xpos, double 
 
 void MujocoInitLoadObjects::mouseMoveCBImpl(GLFWwindow* window, double xpos, double ypos)
 {
-  // Update UI mouse position
-  uistate.x = (int)xpos;
-  uistate.y = (int)ypos;
-
-  // Let UI handle the event (for dragging sliders, etc.)
-  mjui_event(&ui0, &uistate, &con);
-  mjui_event(&ui1, &uistate, &con);
-
-
   // no buttons down: nothing to do
   if (!button_left && !button_middle && !button_right)
   {
@@ -316,13 +195,6 @@ void MujocoInitLoadObjects::scrollCBImpl([[maybe_unused]] GLFWwindow* window,
                                          [[maybe_unused]] double xoffset,
                                          double yoffset)
 {
-  // Update scroll state
-  uistate.sy = (int)yoffset;
-
-  // Let UI handle scroll (for scrolling long panels)
-  mjui_event(&ui0, &uistate, &con);
-  mjui_event(&ui1, &uistate, &con);
-
   // emulate vertical mouse motion = 5% of window height
   mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
@@ -454,24 +326,37 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
 
     // create scene and context
     mjv_makeScene(m, &scn, 2000);
+
+    // init state and uis
+    std::memset(&this->uistate, 0, sizeof(mjuiState));
+    std::memset(&this->ui0, 0, sizeof(mjUI));
+    std::memset(&this->ui1, 0, sizeof(mjUI));
+
+    this->uistate.nrect          = 1;
+    this->uistate.rect[0].width  = 1.0;
+    this->uistate.rect[0].height = 2.0;
+
+    int spacing = 0;
+    int color   = 0;
+
+    this->ui0.spacing = mjui_themeSpacing(spacing);
+    this->ui0.color   = mjui_themeColor(color);
+    // this->ui0.predicate = UiPredicate;
+    this->ui0.rectid = 1;
+    this->ui0.auxid  = 0;
+
+    this->ui1.spacing = mjui_themeSpacing(spacing);
+    this->ui1.color   = mjui_themeColor(color);
+    // this->ui1.predicate = UiPredicate;
+    this->ui1.rectid = 2;
+    this->ui1.auxid  = 1;
+
     mjr_makeContext(m, &con, mjFONTSCALE_150);
 
-    std::cout << "6. Init UI structures" << std::endl;
-    memset(&ui0, 0, sizeof(mjUI));
-    memset(&uistate, 0, sizeof(mjuiState));
-
-    std::cout << "7. Create UI definition" << std::endl;
-    static const mjuiDef defFile[] = {{mjITEM_SECTION, "File", mjPRESERVE, NULL, "AF"},
-                                      {mjITEM_BUTTON, "Quit", 2, NULL, ""},
-                                      {mjITEM_END}};
-
-    std::cout << "8. Call mjui_add" << std::endl;
-    std::cout << std::flush;
-
-    mjui_add(&ui0, defFile);
-
-    std::cout << "9. SUCCESS!" << std::endl;
-
+    static mjuiDef def_panel[] = {
+      {mjITEM_SECTION, "Simulation", 1, nullptr, "AS"}, {mjITEM_BUTTON, "Pause", 2}, {mjITEM_END}};
+    mjui_add(&ui0, def_panel);
+    // initUI();
     // install GLFW mouse and keyboard callbacks
     glfwSetKeyCallback(window, keyboardCB);
     glfwSetMouseButtonCallback(window, mouseButtonCB);
@@ -488,6 +373,7 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
     bool simulation_start = false;
     while (!glfwWindowShouldClose(window))
     {
+      glfwPollEvents();
       // advance interactive simulation for 1/60 sec
       //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
       //  this loop will finish on time for the next frame to be rendered at 60 fps.
@@ -499,20 +385,36 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
         mj_step(m, d);
       }
 
-      // render(window);
-      //  get framebuffer viewport
-      mjrRect viewport = {0, 0, 0, 0};
-      glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
 
       // update scene and render
       mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
-      mjr_render(viewport, &scn, &con);
 
+      // Render
+      int width, height;
+      glfwGetFramebufferSize(window, &width, &height);
+      mjrRect viewport = {0, 0, width, height};
+
+      mjr_render(viewport, &scn, &con);
+      // If Shift toggled it on, draw UI
+
+      if (ui_visible)
+      {
+        uistate.nrect          = 1;
+        uistate.rect[0].left   = 0;
+        uistate.rect[0].bottom = 0;
+        uistate.rect[0].width  = width / 3;
+        uistate.rect[0].height = height;
+        std::cout << std::flush << "Unlocking and notifying 0 " << std::endl;
+        mjr_rectangle(uistate.rect[0], 0.2, 0.2, 0.2, 0.7);
+        mjui_render(&ui0, &uistate, &con);
+        std::cout << std::flush << "Unlocking and notifying 1" << std::endl;
+      }
+      
       // swap OpenGL buffers (blocking call due to v-sync)
       glfwSwapBuffers(window);
 
       // process pending GUI events, call GLFW callbacks
-      glfwPollEvents();
+
       if (!simulation_start & !single_thread)
       {
         std::cout << std::flush << "Unlocking and notifying" << std::endl;

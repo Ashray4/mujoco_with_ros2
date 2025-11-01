@@ -28,6 +28,7 @@
 #  include <string>
 #  include <thread>
 #  include <vector>
+#  include <optional>
 
 #  include "GLFW/glfw3.h"
 #  include "mujoco/mujoco.h"
@@ -36,6 +37,8 @@
 
 #  include <mujoco_with_ros2/command_and_state_buffer.h>
 #  include <realtime_tools/lock_free_queue.hpp>
+
+#include  <mujoco_with_ros2/mujoco_with_ros2_ui_adapter.h>
 
 extern std::mutex mut_ready;
 extern std::condition_variable cv;
@@ -85,16 +88,16 @@ public:
   MujocoInitLoadObjects& operator=(MujocoInitLoadObjects&&)      = delete;
 
   // MuJoCo data structures
-  mjSpec* spec = NULL; // MuJoCo Spec
-  mjModel* m   = NULL; // MuJoCo model
-  mjData* d    = NULL; // MuJoCo data
-  mjvCamera cam;       // abstract camera
-  mjvOption opt;       // visualization options
-  mjvScene scn;        // abstract scene
-  mjrContext con;      // custom GPU context
-  mjUI ui0;            // Left UI panel
-  mjUI ui1;            // Right UI panel
-  mjuiState uistate;   // UI interaction state
+  mjSpec* spec = nullptr; // MuJoCo Spec
+  mjModel* m   = nullptr; // MuJoCo model
+  mjData* d    = nullptr; // MuJoCo data
+  mjvCamera cam;          // abstract camera
+  mjvOption opt;          // visualization options
+  mjvScene scn;           // abstract scene
+  mjrContext con;         // custom GPU context
+  mjUI ui0;               // Left UI panel
+  mjUI ui1;               // Right UI panel
+  mjuiState uistate;      // UI interaction state
   mjvOption vopt;
 
   // UI control variables (these were global)
@@ -107,38 +110,36 @@ public:
   int transparent  = 0;
   int ui0_enable;
   int ui1_enable;
+  bool ui_visible = false;
+
 
   // UI section definitions (can be static const)
-  static const mjuiDef defFile[];
-  static const mjuiDef defSimulation[];
-  static const mjuiDef defRendering[];
-
   void initUI()
-  { 
-    
+  {
     std::cout << std::flush << "Initializing UI : " << std::endl;
     // Left UI FIles
-    static const mjuiDef defFile[] = {{mjITEM_SECTION, "File", mjPRESERVE, NULL, "AF"},
-                                      {mjITEM_BUTTON, "Save XML", 2, NULL, ""},
-                                      {mjITEM_BUTTON, "Save Model", 2, NULL, ""},
-                                      {mjITEM_BUTTON, "Reset", 2, NULL, " "},
-                                      {mjITEM_BUTTON, "Quit", 2, NULL, "Escape"},
+    static const mjuiDef defFile[] = {{mjITEM_SECTION, "File", mjPRESERVE, nullptr, "AF"},
+                                      {mjITEM_BUTTON, "Save XML", 2, nullptr, ""},
+                                      {mjITEM_BUTTON, "Save Model", 2, nullptr, ""},
+                                      {mjITEM_BUTTON, "Reset", 2, nullptr, " "},
+                                      {mjITEM_BUTTON, "Quit", 2, nullptr, "Escape"},
                                       {mjITEM_END}};
     std::cout << std::flush << "Initialized FILE : " << std::endl;
-    static const mjuiDef defSimulation[] = {{mjITEM_SECTION, "Simulation", mjPRESERVE, NULL, "AS"},
-                                            {mjITEM_CHECKINT, "Paused", 2, &paused, " "},
-                                            {mjITEM_SLIDERINT, "Speed", 2, &speed, "1 10"},
-                                            {mjITEM_BUTTON, "Reset", 2, NULL, "Backspace"},
-                                            {mjITEM_END}};
+    static const mjuiDef defSimulation[] = {
+      {mjITEM_SECTION, "Simulation", mjPRESERVE, nullptr, "AS"},
+      {mjITEM_CHECKINT, "Paused", 2, &paused, " "},
+      {mjITEM_SLIDERINT, "Speed", 2, &speed, "1 10"},
+      {mjITEM_BUTTON, "Reset", 2, nullptr, "Backspace"},
+      {mjITEM_END}};
     std::cout << std::flush << "Initialized Simulation : " << std::endl;
     static const mjuiDef defVisualization[] = {
-      {mjITEM_SECTION, "Visualization", mjPRESERVE, NULL, "AV"},
+      {mjITEM_SECTION, "Visualization", mjPRESERVE, nullptr, "AV"},
       {mjITEM_CHECKINT, "Wireframe", 2, &wireframe, "W"},
       {mjITEM_CHECKINT, "Transparent", 2, &transparent, "T"},
       {mjITEM_END}};
     std::cout << std::flush << "Initialized Visualization : " << std::endl;
     static const mjuiDef defRendering[] = {
-      {mjITEM_SECTION, "Rendering", mjPRESERVE, NULL, "AR"},
+      {mjITEM_SECTION, "Rendering", mjPRESERVE, nullptr, "AR"},
       {mjITEM_CHECKINT, "Show Contact", 2, &show_contact, "C"},
       {mjITEM_CHECKINT, "Show Forces", 2, &show_forces, "F"},
       {mjITEM_SLIDERINT, "Frame Rate", 2, &frame_rate, "30 120"},
@@ -146,7 +147,7 @@ public:
     std::cout << std::flush << "Initialized rendering : " << std::endl;
 
     // Clear UI structures
-    memset(&ui0, 0, sizeof(mjUI));
+    memset(&this->ui0, 0, sizeof(mjUI));
     memset(&ui1, 0, sizeof(mjUI));
     memset(&uistate, 0, sizeof(mjuiState));
     std::cout << std::flush << "cleared memory " << std::endl;
@@ -159,10 +160,12 @@ public:
     uistate.rect[1].left   = 0; // Will be set to window_width - 250
     uistate.rect[1].bottom = 0;
     uistate.rect[1].width  = 250; // Right panel width
-    
+
     std::cout << std::flush << "set value " << std::endl;
+    this->ui0.userdata = this;
+    this->ui1.userdata = this;
     // Add sections to LEFT UI (ui0)
-    mjui_add(&ui0, defFile);
+    mjui_add(&this->ui0, defFile);
     std::cout << std::flush << "problem 1 " << std::endl;
     mjui_add(&ui0, defSimulation);
     std::cout << std::flush << "problem 2 " << std::endl;
@@ -183,7 +186,7 @@ public:
       return;
 
     // Add joint section header
-    const static mjuiDef defJoint = {mjITEM_SECTION, "Joints", mjPRESERVE, NULL, "AJ"};
+    const static mjuiDef defJoint = {mjITEM_SECTION, "Joints", mjPRESERVE, nullptr, "AJ"};
     mjui_add(&ui1, &defJoint);
 
     // Add slider for each joint
@@ -203,7 +206,7 @@ public:
     }
 
     // Add control section header
-    const static mjuiDef defControl = {mjITEM_SECTION, "Controls", mjPRESERVE, NULL, "AC"};
+    const static mjuiDef defControl = {mjITEM_SECTION, "Controls", mjPRESERVE, nullptr, "AC"};
     mjui_add(&ui1, &defControl);
 
     // Add slider for each actuator

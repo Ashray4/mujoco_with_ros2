@@ -38,7 +38,6 @@
 #  include <mujoco_with_ros2/command_and_state_buffer.h>
 #  include <realtime_tools/lock_free_queue.hpp>
 
-#include  <mujoco_with_ros2/mujoco_with_ros2_ui_adapter.h>
 
 extern std::mutex mut_ready;
 extern std::condition_variable cv;
@@ -111,7 +110,6 @@ public:
   int ui0_enable;
   int ui1_enable;
   bool ui_visible = false;
-
 
   // UI section definitions (can be static const)
   void initUI()

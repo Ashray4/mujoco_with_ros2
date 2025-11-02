@@ -326,38 +326,23 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
 
     // create scene and context
     mjv_makeScene(m, &scn, 2000);
-
-    // init state and uis
-    std::memset(&this->uistate, 0, sizeof(mjuiState));
-    std::memset(&this->ui0, 0, sizeof(mjUI));
-    std::memset(&this->ui1, 0, sizeof(mjUI));
-
-    this->uistate.nrect          = 1;
-    this->uistate.rect[0].width  = 1.0;
-    this->uistate.rect[0].height = 2.0;
-
-    int spacing = 0;
-    int color   = 0;
-
-    this->ui0.spacing = mjui_themeSpacing(spacing);
-    this->ui0.color   = mjui_themeColor(color);
-    // this->ui0.predicate = UiPredicate;
-    this->ui0.rectid = 1;
-    this->ui0.auxid  = 0;
-
-    this->ui1.spacing = mjui_themeSpacing(spacing);
-    this->ui1.color   = mjui_themeColor(color);
-    // this->ui1.predicate = UiPredicate;
-    this->ui1.rectid = 2;
-    this->ui1.auxid  = 1;
-
     mjr_makeContext(m, &con, mjFONTSCALE_150);
 
-    static mjuiDef def_panel[] = {
-      {mjITEM_SECTION, "Simulation", 1, nullptr, "AS"}, {mjITEM_BUTTON, "Pause", 2}, {mjITEM_END}};
+    // UI init
+    std::memset(&uistate, 0, sizeof uistate);
+    std::memset(&ui0, 0, sizeof ui0);
+    ui0.spacing = mjui_themeSpacing(0);
+    ui0.color   = mjui_themeColor(0);
+    ui0.rectid  = 1; // <- will draw into uistate.rect[1]
+    ui0.auxid   = 0;
+
+    static mjuiDef def_panel[] = {{mjITEM_SECTION, "Simulation", 1, nullptr, "AS"},
+                                  {mjITEM_BUTTON, "Pause/Run (Space)", 2},
+                                  {mjITEM_END}};
     mjui_add(&ui0, def_panel);
-    // initUI();
-    // install GLFW mouse and keyboard callbacks
+    mjui_resize(&ui0, &con); // compute panel width, etc.
+
+
     glfwSetKeyCallback(window, keyboardCB);
     glfwSetMouseButtonCallback(window, mouseButtonCB);
     glfwSetCursorPosCallback(window, mouseMoveCB);
@@ -378,8 +363,7 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
       //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
       //  this loop will finish on time for the next frame to be rendered at 60 fps.
       //  Otherwise add a cpu timer and exit this loop when it is time to render.
-      mjtNum simstart    = d->time;
-      mjuiDef defJoint[] = {{mjITEM_SECTION, "Joint", mjPRESERVE, nullptr, "AJ"}, {mjITEM_END}};
+      mjtNum simstart = d->time;
       while (d->time - simstart < 1.0 / 60.0)
       {
         mj_step(m, d);
@@ -392,24 +376,31 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
       // Render
       int width, height;
       glfwGetFramebufferSize(window, &width, &height);
-      mjrRect viewport = {0, 0, width, height};
 
+      uistate.nrect = 2;
+
+      // main viewport
+      uistate.rect[0].left   = 0;
+      uistate.rect[0].bottom = 0;
+      uistate.rect[0].width  = width;
+      uistate.rect[0].height = height;
+
+      // right panel (ui0.rectid == 1 -> uistate.rect[1])
+      int panel_w            = ui_visible ? ui0.width : 0;
+      uistate.rect[1].width  = panel_w;
+      uistate.rect[1].left   = (panel_w > 0) ? width - panel_w : width; // stick to right edge
+      uistate.rect[1].bottom = 0;
+      uistate.rect[1].height = height;
+
+      mjrRect viewport = {0, 0, width, height};
       mjr_render(viewport, &scn, &con);
-      // If Shift toggled it on, draw UI
 
       if (ui_visible)
       {
-        uistate.nrect          = 1;
-        uistate.rect[0].left   = 0;
-        uistate.rect[0].bottom = 0;
-        uistate.rect[0].width  = width / 3;
-        uistate.rect[0].height = height;
-        std::cout << std::flush << "Unlocking and notifying 0 " << std::endl;
-        mjr_rectangle(uistate.rect[0], 0.2, 0.2, 0.2, 0.7);
-        mjui_render(&ui0, &uistate, &con);
-        std::cout << std::flush << "Unlocking and notifying 1" << std::endl;
+        mjr_rectangle(uistate.rect[1], 0.2f, 0.2f, 0.2f, 0.7f);
+        mjui_render(&ui0, &uistate, &con); // draw UI; events already handled in callbacks
       }
-      
+
       // swap OpenGL buffers (blocking call due to v-sync)
       glfwSwapBuffers(window);
 

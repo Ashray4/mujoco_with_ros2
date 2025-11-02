@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "glfw_adapter.h"
+#include "mujoco_with_ros2/glfw_adapter.h"
 
 #include <cstdlib>
 #include <utility>
@@ -20,11 +20,8 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mjui.h>
 #include <mujoco/mujoco.h>
-#include "glfw_dispatch.h"
+#include "mujoco_with_ros2/glfw_dispatch.h"
 
-#ifdef __APPLE__
-#include "glfw_corevideo.h"
-#endif
 
 namespace mujoco_with_ros2 {
 namespace {
@@ -92,12 +89,7 @@ GlfwAdapter::GlfwAdapter() {
       });
   Glfw().glfwSetWindowRefreshCallback(
       window_, +[](GLFWwindow* window) {
-#ifdef __APPLE__
-        auto& core_video = GlfwAdapterFromWindow(window).core_video_;
-        if (core_video.has_value()) {
-          core_video->UpdateDisplayLink();
-        }
-#endif
+
         GlfwAdapterFromWindow(window).OnWindowRefresh();
       });
   Glfw().glfwSetWindowSizeCallback(

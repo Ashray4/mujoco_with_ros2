@@ -51,6 +51,10 @@ add_library(${PROJECT_NAME} SHARED
 src/mujoco_initialize_and_load_objects.cpp
 src/manage_mujoco.cpp  
 src/mujoco_ros2_system_control.cpp
+src/glfw_adapter.cpp
+src/glfw_dispatch.cpp
+src/mujoco_with_ros2_render.cpp
+src/mujoco_with_ros2_ui_adapter.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -84,6 +88,20 @@ target_link_libraries(${PROJECT_NAME}_simulator_test PUBLIC
 
 ament_target_dependencies(${PROJECT_NAME}_simulator_test PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
+add_executable(${PROJECT_NAME}_adaptor_test
+src/mujoco_test.cpp)
+target_include_directories(${PROJECT_NAME}_adaptor_test PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/mujoco_with_ros2>
+    ${MUJOCO_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} mujoco_with_ros2
+)
+target_link_libraries(${PROJECT_NAME}_adaptor_test PUBLIC
+    ${PROJECT_NAME}  # This links to your main library
+    ${MUJOCO_LIBRARIES} 
+    ${GLFW_LIBRARIES} 
+    GLEW::GLEW
+)
+ament_target_dependencies(${PROJECT_NAME}_adaptor_test PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # ===================================================================
 # Install & export
@@ -101,6 +119,7 @@ install(TARGETS
 )
 install(TARGETS
 ${PROJECT_NAME}_simulator_test
+${PROJECT_NAME}_adaptor_test
 DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "mujoco_with_ros2_render.h"
+#include "mujoco_with_ros2/mujoco_with_ros2_render.h"
 
 #include <algorithm>
 #include <atomic>
@@ -27,8 +27,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "array_safety.h"
-#include "mujoco_with_ros2_ui_adapter.h"
+#include "mujoco_with_ros2/array_safety.h"
+#include "mujoco_with_ros2/mujoco_with_ros2_ui_adapter.h"
 #include <mujoco/mjdata.h>
 #include <mujoco/mjui.h>
 #include <mujoco/mjvisualize.h>
@@ -1525,14 +1525,14 @@ void UiEvent(mjuiState* state)
         break;
 
       case '-': // slow down
-
+        {
         int numclicks = sizeof(sim->percentRealTime) / sizeof(sim->percentRealTime[0]);
         if (sim->real_time_index < numclicks - 1 && !state->shift)
         {
           sim->real_time_index++;
           sim->speed_changed = true;
         }
-
+      }
         break;
 
       case '=': // speed up

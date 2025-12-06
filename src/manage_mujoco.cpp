@@ -13,10 +13,10 @@ ManageMujoco::ManageMujoco(int n_joints,
   , queue_size_{queue_size}
   , load_mujoco_object_simulation_{MujocoInitLoadObjects::getInstance()}
   , command_buffer_(
-      std::make_shared<CommandBuffer>(1024, n_joints_, std::vector<CommandTypes>{control_mode}))
+      std::make_shared<CommandBuffer>(queue_size_, n_joints_, std::vector<CommandTypes>{control_mode}))
   , state_buffer_(std::make_shared<StateBuffer>())
   , sensor_buffer_(
-      std::make_shared<StateBuffer>(1024, 6, std::vector<CommandTypes>{CommandTypes::SENSOR}))
+      std::make_shared<StateBuffer>(queue_size_, 6, std::vector<CommandTypes>{CommandTypes::SENSOR}))
   , tool(end_effector)
 {
   initialize_mujoco_simulation();

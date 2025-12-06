@@ -197,7 +197,7 @@ struct StateBuffer : QueueBuffers
 {
   // Default constructor for a 6 joint robot
   StateBuffer()
-    : QueueBuffers(1024, 6, {CommandTypes::POSITION, CommandTypes::VELOCITY, CommandTypes::EFFORT})
+    : QueueBuffers(1, 6, {CommandTypes::POSITION, CommandTypes::VELOCITY, CommandTypes::EFFORT})
   {
   }
   StateBuffer(int q_size_, size_t n_joints_, std::vector<CommandTypes> command_type)

@@ -1,0 +1,17 @@
+<library path="mujoco_with_ros2">
+    <class name="mujoco_with_ros2/MujocoManagerGui" type="mujoco_with_ros2::MujocoManagerGui" base_class_type="rqt_gui_cpp::Plugin">
+        <description>
+            Mujuco manager GUI to interact with the Mujoco simulation 
+        </description>
+    <qtgui>
+      <group>
+        <label>Visualization</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins related to visualization.</statustip>
+      </group>
+      <label>Mujoco MAnager</label>
+      <icon type="theme">image-x-generic</icon>
+      <statustip>A GUI plugin to interact with the Mujoco simulation </statustip>
+    </qtgui>
+    </class>
+</library>

@@ -8,7 +8,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-  hardware_interface pluginlib rclcpp rclcpp_lifecycle realtime_tools Boost
+  hardware_interface pluginlib rclcpp rclcpp_lifecycle realtime_tools Boost control_msgs
 )
 foreach(dep IN LISTS THIS_PACKAGE_INCLUDE_DEPENDS)
   find_package(${dep} REQUIRED)

@@ -58,25 +58,43 @@ def generate_launch_description():
     # )
 
 
-    # Controllers to spawn
-    controllers = [
+    controllers_active = [
         "joint_state_broadcaster",
         "interpolation_controller",
         "force_torque_sensor_broadcaster",
-        #"effort_controller",
-        #"joint_trajectory_controller"
     ]
-
-    spawner_nodes = [
-        Node(
-            package="controller_manager",
-            executable="spawner",
-            arguments=[controller, "-c", "/controller_manager"],
-            output="screen",
+    
+    controllers_inactive = [
+        "adaptive_mpc_controller",
+        "interpoaltion_example_controller",
+        "effort_controller",
+        "joint_trajectory_controller"
+    ]
+    
+    spawner_nodes = []
+    
+    # Spawn and activate these controllers
+    for controller in controllers_active:
+        spawner_nodes.append(
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=[controller, "-c", "/controller_manager"],
+                output="screen",
+            )
         )
-        for controller in controllers
-    ]
-
+    
+    # Spawn but keep inactive (loaded but not started)
+    for controller in controllers_inactive:
+        spawner_nodes.append(
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=[controller, "-c", "/controller_manager", "--inactive"],
+                output="screen",
+            )
+        )
+    
     # gripper_controllers = [
     #     "gripper_controller",
 

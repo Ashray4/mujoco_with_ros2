@@ -25,7 +25,7 @@
   </asset>
 
   <worldbody>
-    <light pos="0 0 1.5" directional="true"/>
+    <light pos="0 0 2.5" directional="true"/>
     <body name="free_red_box" pos="0.2 0 0.97" >
       <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
       <geom name="red_box" type="box" size=".03 .03 .03" pos="0 0 0" rgba="1 0 0 1"  friction="1.0 0.5 0.0001" solimp="0.99 0.99 0.01" solref="0.02 1"/> <!-- -->

@@ -55,25 +55,13 @@ controller_manager:
       type: forward_command_controller/ForwardCommandController
 
     interpolation_controller:
-      type: pd_controller_interpolation/PDControllerInterpolation
+      type: interpolation_controller/InterpolationController
 
-interpolation_controller:
-  ros__parameters:
-    p_gains:
-      - 600.0
-      - 600.0
-      - 600.0
-      - 600.0
-      - 250.0
-      - 150.0
-    d_gains:
-      - 44.98
-      - 44.98
-      - 44.98
-      - 44.98
-      - 5.0
-      - 8.0
+    adaptive_mpc_controller:
+      type: adaptive_mpc_controller/AdaptiveMPCController
 
+    interpoaltion_example_controller:
+      type: interpolation_controller_chaining_example_controller/InterpolationControllerChainingExample
 speed_scaling_state_broadcaster:
   ros__parameters:
     state_publish_rate: 500.0
@@ -355,3 +343,15 @@ admittance_controller:
         - 60.  # rz
     # general settings
     enable_parameter_update_without_reactivation: true
+
+adaptive_mpc_controller:
+  ros__parameters:
+    prediction_horizon: 30
+    sampling_time: 0.075
+    joint_names:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint

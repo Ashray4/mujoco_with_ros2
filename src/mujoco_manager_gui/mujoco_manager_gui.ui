@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>MainWindow</class>
+    <widget class="QMainWindow" name="MainWindow">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>800</width>
+                <height>600</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>MainWindow</string>
+        </property>
+        <widget class="QWidget" name="centralwidget">
+            <widget class="QPushButton" name="pushButton">
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>40</y>
+                        <width>121</width>
+                        <height>71</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pause</string>
+                </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton_2">
+                <property name="geometry">
+                    <rect>
+                        <x>620</x>
+                        <y>50</y>
+                        <width>121</width>
+                        <height>71</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Reset</string>
+                </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton_3">
+                <property name="geometry">
+                    <rect>
+                        <x>260</x>
+                        <y>40</y>
+                        <width>121</width>
+                        <height>71</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Resume</string>
+                </property>
+            </widget>
+        </widget>
+        <widget class="QMenuBar" name="menubar">
+            <property name="geometry">
+                <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>800</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <widget class="QMenu" name="menuMj_MAnager">
+                <property name="title">
+                    <string>Mj MAnager</string>
+                </property>
+            </widget>
+            <addaction name="menuMj_MAnager" />
+        </widget>
+        <widget class="QStatusBar" name="statusbar" />
+    </widget>
+    <customwidgets>
+        <customwidget>
+            <class>rqt_image_view::RatioLayoutedFrame</class>
+            <extends>QFrame</extends>
+            <header>rqt_image_view/ratio_layouted_frame.hpp</header>
+            <container>1</container>
+        </customwidget>
+    </customwidgets>
+    <resources />
+    <connections />
+</ui>

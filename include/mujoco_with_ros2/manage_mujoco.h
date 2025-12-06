@@ -29,7 +29,7 @@ private:
 public:
   ManageMujoco(int n_joints,
                std::vector<std::string>& mujoco_joint_names,CommandTypes control_mode = CommandTypes::POSITION,
-               size_t queue_size = 1024, std::string end_effector = "tool0");
+               size_t queue_size = 1, std::string end_effector = "tool0");
   ~ManageMujoco();
 
   int totalJoints();

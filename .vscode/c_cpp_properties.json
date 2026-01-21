@@ -9,6 +9,7 @@
         "/home/saksham/checkout/thesis_ws/colcon_ws/install/adaptive_mpc_interfaces/include/**",
         "/opt/ros/humble/include/**",
         "/home/saksham/checkout/thesis_ws/colcon_ws/src/mujoco_with_ros2/include/**",
+        "/home/saksham/checkout/ros2_control_ws/colcon_ws/install/controller_interface/include/**",
         "/usr/include/**"
       ],
       "name": "ROS",

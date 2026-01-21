@@ -28,7 +28,7 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   joint_pos_vector_.resize(info.joints.size(), 0.0);
   joint_vel_vector_.resize(info.joints.size(), 0.0);
   joint_eff_vector_.resize(info.joints.size(), 0.0);
-  sensor_vector_.resize(info.joints.size(), 0.0);
+  sensor_vector_.resize(6, 0.0); // hardcoded
 
   joint_command_pos_vector_.resize(info.joints.size(), 0.0);
   joint_command_vel_vector_.resize(info.joints.size(), 0.0);
@@ -36,13 +36,19 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
 
 
   // initialize simulation
-  ur5e_joint_names.resize(info.joints.size());
-  for (size_t i = 0; i < info_.joints.size(); i++)
-  {
-    ur5e_joint_names[i] = info_.joints[i].name;
-  }
-
-  bool test = true;
+  // hardcoded, add the real joints later
+  // ur5e_joint_names.resize(info.joints.size());
+  // for (size_t i = 0; i < info_.joints.size(); i++)
+  // {
+  //   ur5e_joint_names[i] = info_.joints[i].name;
+  // }
+  ur5e_joint_names = {"shoulder_pan_joint",
+                      "shoulder_lift_joint",
+                      "elbow_joint",
+                      "wrist_1_joint",
+                      "wrist_2_joint",
+                      "wrist_3_joint"};
+  bool test        = true;
 
   std::cout << std::flush << info_.joints[0].command_interfaces[0].name << std::endl;
   std::cout << std::flush << info_.joints[1].command_interfaces[0].name << std::endl;
@@ -244,7 +250,7 @@ MujocowithRos2SystemHardware::on_deactivate(const rclcpp_lifecycle::State& /*pre
 hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp::Time& /*time*/,
                                                                    const rclcpp::Duration& period)
 {
-  for (size_t i = 0; i < info_.joints.size(); i++)
+  for (size_t i = 0; i < ur5e_joint_names.size(); i++)
   {
     if (mujoco_manager->state_buffer_->pop_value(
           mujoco_with_ros2::CommandTypes::POSITION, i, read_data_))
@@ -271,6 +277,23 @@ hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp:
       sensor_vector_[i] = read_data_;
     }
   }
+
+  // hardcoded
+  if (mujoco_manager->eef_state_buffer_->pop_value(
+        mujoco_with_ros2::CommandTypes::POSITION, 0, read_data_))
+  {
+    joint_pos_vector_[joint_pos_vector_.size() - 1] = read_data_;
+  }
+  if (mujoco_manager->eef_state_buffer_->pop_value(
+        mujoco_with_ros2::CommandTypes::VELOCITY, 0, read_data_))
+  {
+    joint_vel_vector_[joint_pos_vector_.size() - 1] = read_data_;
+  }
+  if (mujoco_manager->state_buffer_->pop_value(
+        mujoco_with_ros2::CommandTypes::EFFORT, 0, read_data_))
+  {
+    joint_eff_vector_[joint_pos_vector_.size() - 1] = read_data_;
+  }
   return hardware_interface::return_type::OK;
 }
 
@@ -278,7 +301,7 @@ hardware_interface::return_type
 MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
                                     const rclcpp::Duration& /*period*/)
 {
-  for (size_t i = 0; i < info_.joints.size(); i++)
+  for (size_t i = 0; i < ur5e_joint_names.size(); i++)
   {
     bool success = false;
 
@@ -302,6 +325,10 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
       //           << joint_command_eff_vector_[i] << " success: " << success << std::endl;
     }
   }
+
+  // hardcoded only supports position interface for now
+  auto ss = mujoco_manager->eef_command_buffer_->push_value(
+    mujoco_with_ros2::CommandTypes::POSITION, 0, joint_command_pos_vector_.back());
 
   return hardware_interface::return_type::OK;
 }

@@ -9,7 +9,7 @@
         <icon type="theme">folder</icon>
         <statustip>Plugins related to visualization.</statustip>
       </group>
-      <label>Mujoco MAnager</label>
+      <label>Mujoco Manager</label>
       <icon type="theme">image-x-generic</icon>
       <statustip>A GUI plugin to interact with the Mujoco simulation </statustip>
     </qtgui>

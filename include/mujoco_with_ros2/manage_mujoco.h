@@ -18,7 +18,8 @@ private:
   std::vector<std::string> mujoco_joint_names_;
   std::vector<int> mujoco_joint_ids_;
   std::vector<int> mujoco_sensor_ids_;
-
+  std::vector<int> mujoco_eef_ids_;
+  
   // Mujoco Simulation Variables
   size_t queue_size_;
 
@@ -43,7 +44,11 @@ public:
 
   bool check_for_instance();
   void delete_simulation();
-
+  
+  // interact with simulation
+  bool pause_simulation();
+  bool reset_simulation();
+  
   // MuJoCo data structures
   mjSpec* mujoco_spec   = NULL; // MuJoCo Spec
   mjModel* mujoco_model = NULL; // MuJoCo model
@@ -52,8 +57,11 @@ public:
   MujocoInitLoadObjects& load_mujoco_object_simulation_;
   
   std::shared_ptr<CommandBuffer> command_buffer_;
+  std::shared_ptr<CommandBuffer> eef_command_buffer_;
   std::shared_ptr<StateBuffer> state_buffer_;
+  std::shared_ptr<StateBuffer> eef_state_buffer_;
   std::shared_ptr<StateBuffer> sensor_buffer_;
+  std::shared_ptr<SimulationInteraction> simulation_flags_;
   CommandTypes control_mode_;
   std::string tool;
 

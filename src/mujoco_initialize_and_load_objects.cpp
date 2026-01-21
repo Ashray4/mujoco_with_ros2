@@ -27,47 +27,28 @@ namespace mujoco_with_ros2 {
 
 MujocoInitLoadObjects::MujocoInitLoadObjects() {}
 
-void MujocoInitLoadObjects::initialize_buffers(std::shared_ptr<CommandBuffer> c_buff,
-                                               std::shared_ptr<StateBuffer> s_buff,
-                                               std::shared_ptr<StateBuffer> sens_buff,
-                                               std::vector<int> joint_ids_,
-                                               std::vector<int> sensor_ids_)
+void MujocoInitLoadObjects::initialize_buffers(
+  std::shared_ptr<CommandBuffer> c_buff,
+  std::shared_ptr<CommandBuffer> c_eef_buff,
+  std::shared_ptr<StateBuffer> s_buff,
+  std::shared_ptr<StateBuffer> sens_buff,
+  std::shared_ptr<StateBuffer> s_eef_buff,
+  std::shared_ptr<SimulationInteraction> simulation_flags,
+  std::vector<int> joint_ids_,
+  std::vector<int> eef_ids_,
+  std::vector<int> sensor_ids_)
 {
-  command_buffer_    = c_buff;
-  state_buffer_      = s_buff;
-  mujoco_joint_ids_  = joint_ids_;
-  mujoco_sensor_ids_ = sensor_ids_;
-  sensor_buffer_     = sens_buff;
-  command_type_      = command_buffer_->get_command_type();
+  command_buffer_     = c_buff;
+  eef_command_buffer_ = c_eef_buff;
+  state_buffer_       = s_buff;
+  eef_state_buffer_   = s_eef_buff;
+  mujoco_joint_ids_   = joint_ids_;
+  mujoco_eef_ids_     = eef_ids_;
+  mujoco_sensor_ids_  = sensor_ids_;
+  sensor_buffer_      = sens_buff;
+  command_type_       = command_buffer_->get_command_type();
+  simulation_flags_   = simulation_flags;
 }
-void MujocoInitLoadObjects::updateUI()
-{
-  // Update visualization options from checkboxes
-  if (show_contact)
-  {
-    vopt.flags[mjVIS_CONTACTPOINT] = 1;
-    vopt.flags[mjVIS_CONTACTFORCE] = 1;
-  }
-  else
-  {
-    vopt.flags[mjVIS_CONTACTPOINT] = 0;
-    vopt.flags[mjVIS_CONTACTFORCE] = 0;
-  }
-
-  // if (wireframe)
-  // {
-  //   vopt.flags[mjVIS] = 1;
-  // }
-  // else
-  // {
-  //   vopt.flags[mjVIS_WIREFRAME] = 0;
-  // }
-
-  // Refresh UI display
-  mjui_update(-1, -1, &ui0, &uistate, &con);
-  mjui_update(-1, -1, &ui1, &uistate, &con);
-}
-
 
 // keyboard callback
 void MujocoInitLoadObjects::keyboardCB(GLFWwindow* window, int key, int scancode, int act, int mods)
@@ -83,18 +64,7 @@ void MujocoInitLoadObjects::keyboardCBImpl([[maybe_unused]] GLFWwindow* window,
 {
   if (act == GLFW_PRESS)
   {
-    if (mods & GLFW_MOD_SHIFT)
-    {
-      // Toggle UI panel with Shift key
-      ui_visible = !ui_visible;
-      std::cout << std::flush << (ui_visible ? "UI opened\n" : "UI closed\n") << std::endl;
-    }
-    else if (key == GLFW_KEY_SPACE)
-    {
-      paused = !paused;
-      std::cout << (paused ? "Paused\n" : "Running\n");
-    }
-    else if (key == GLFW_KEY_ESCAPE)
+    if (key == GLFW_KEY_ESCAPE)
     {
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
@@ -121,15 +91,15 @@ void MujocoInitLoadObjects::mouseButtonCBImpl(GLFWwindow* window,
   // update mouse position
   glfwGetCursorPos(window, &lastx, &lasty);
 
-  // Update button state
-  uistate.left   = (button == GLFW_MOUSE_BUTTON_LEFT && act == GLFW_PRESS);
-  uistate.right  = (button == GLFW_MOUSE_BUTTON_RIGHT && act == GLFW_PRESS);
-  uistate.middle = (button == GLFW_MOUSE_BUTTON_MIDDLE && act == GLFW_PRESS);
+  // // Update button state
+  // uistate.left   = (button == GLFW_MOUSE_BUTTON_LEFT && act == GLFW_PRESS);
+  // uistate.right  = (button == GLFW_MOUSE_BUTTON_RIGHT && act == GLFW_PRESS);
+  // uistate.middle = (button == GLFW_MOUSE_BUTTON_MIDDLE && act == GLFW_PRESS);
 
-  // Update modifier keys
-  uistate.shift   = (mods & GLFW_MOD_SHIFT);
-  uistate.alt     = (mods & GLFW_MOD_ALT);
-  uistate.control = (mods & GLFW_MOD_CONTROL);
+  // // Update modifier keys
+  // uistate.shift   = (mods & GLFW_MOD_SHIFT);
+  // uistate.alt     = (mods & GLFW_MOD_ALT);
+  // uistate.control = (mods & GLFW_MOD_CONTROL);
 
   // Get mouse position
   double xpos, ypos;
@@ -199,36 +169,6 @@ void MujocoInitLoadObjects::scrollCBImpl([[maybe_unused]] GLFWwindow* window,
   mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-void MujocoInitLoadObjects::render(GLFWwindow* window)
-{
-  // Get window size
-  int width, height;
-  glfwGetWindowSize(window, &width, &height);
-
-  // Update right UI position
-  uistate.rect[1].left = width - uistate.rect[1].width;
-
-  // Render 3D scene
-  mjrRect viewport = {0, 0, width, height};
-  mjv_updateScene(m, d, &vopt, NULL, &cam, mjCAT_ALL, &scn);
-  mjr_render(viewport, &scn, &con);
-
-  // Render UI panels on top
-  if (ui0_enable)
-  {
-    mjr_rectangle(uistate.rect[0], 0.2, 0.2, 0.2, 0.7); // Background
-    mjui_render(&ui0, &uistate, &con);
-  }
-
-  if (ui1_enable)
-  {
-    mjr_rectangle(uistate.rect[1], 0.2, 0.2, 0.2, 0.7); // Background
-    mjui_render(&ui1, &uistate, &con);
-  }
-
-  // Swap buffers
-  glfwSwapBuffers(window);
-}
 
 void MujocoInitLoadObjects::controlCB(const mjModel* m, mjData* d)
 {
@@ -242,10 +182,29 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
   //     std::cout << d->sensordata[start + i] << std::endl;
   // }
 
+
+  // hardcoded, seperate end effector somehow ?
+  for (size_t j = 0; j < mujoco_eef_ids_.size(); j++)
+  {
+    auto test_eef = eef_command_buffer_->pop_value(CommandTypes::POSITION, j, eef_data_out);
+    // std::cout << std::flush << "test: " << mujoco_eef_ids_[j] << std::endl;
+    if (test_eef)
+    {
+      d->ctrl[18] = eef_data_out;
+    }
+    eef_state_buffer_->push_value(
+      CommandTypes::POSITION, j, d->qpos[m->jnt_qposadr[mujoco_eef_ids_[j]]]);
+    eef_state_buffer_->push_value(
+      CommandTypes::VELOCITY, j, d->qvel[m->jnt_dofadr[mujoco_eef_ids_[j]]]);
+    eef_state_buffer_->push_value(
+      CommandTypes::EFFORT, j, d->qacc[m->jnt_dofadr[mujoco_eef_ids_[j]]]);
+  }
+
   // better automated ways and not hardcoding
-  for (int i = 0; i < 6; ++i)
+  for (int i = 0; i < mujoco_joint_ids_.size(); ++i)
   {
     auto test = command_buffer_->pop_value(command_type_, i, data_out);
+
     // std::cout<<std::flush<<"test: "<<test<<std::endl;
     if (test)
     {
@@ -256,9 +215,9 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
     state_buffer_->push_value(
       CommandTypes::POSITION, i, d->qpos[m->jnt_qposadr[mujoco_joint_ids_[i]]]);
     state_buffer_->push_value(
-      CommandTypes::VELOCITY, i, d->qvel[m->jnt_qposadr[mujoco_joint_ids_[i]]]);
+      CommandTypes::VELOCITY, i, d->qvel[m->jnt_dofadr[mujoco_joint_ids_[i]]]);
     state_buffer_->push_value(
-      CommandTypes::EFFORT, i, d->qacc[m->jnt_qposadr[mujoco_joint_ids_[i]]]);
+      CommandTypes::EFFORT, i, d->qacc[m->jnt_dofadr[mujoco_joint_ids_[i]]]);
   }
 
   // better automated ways and not hardcoding
@@ -327,36 +286,13 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
     // create scene and context
     mjv_makeScene(m, &scn, 2000);
 
-    // init state and uis
-    std::memset(&this->uistate, 0, sizeof(mjuiState));
-    std::memset(&this->ui0, 0, sizeof(mjUI));
-    std::memset(&this->ui1, 0, sizeof(mjUI));
-
-    this->uistate.nrect          = 1;
-    this->uistate.rect[0].width  = 1.0;
-    this->uistate.rect[0].height = 2.0;
-
-    int spacing = 0;
-    int color   = 0;
-
-    this->ui0.spacing = mjui_themeSpacing(spacing);
-    this->ui0.color   = mjui_themeColor(color);
-    // this->ui0.predicate = UiPredicate;
-    this->ui0.rectid = 1;
-    this->ui0.auxid  = 0;
-
-    this->ui1.spacing = mjui_themeSpacing(spacing);
-    this->ui1.color   = mjui_themeColor(color);
-    // this->ui1.predicate = UiPredicate;
-    this->ui1.rectid = 2;
-    this->ui1.auxid  = 1;
+    // // init state and uis
+    // std::memset(&this->uistate, 0, sizeof(mjuiState));
+    // std::memset(&this->ui0, 0, sizeof(mjUI));
+    // std::memset(&this->ui1, 0, sizeof(mjUI));
 
     mjr_makeContext(m, &con, mjFONTSCALE_150);
 
-    static mjuiDef def_panel[] = {
-      {mjITEM_SECTION, "Simulation", 1, nullptr, "AS"}, {mjITEM_BUTTON, "Pause", 2}, {mjITEM_END}};
-    mjui_add(&ui0, def_panel);
-    // initUI();
     // install GLFW mouse and keyboard callbacks
     glfwSetKeyCallback(window, keyboardCB);
     glfwSetMouseButtonCallback(window, mouseButtonCB);
@@ -370,6 +306,28 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
 
     // run main loop, target real-time simulation and 60 fps rendering
 
+    for (int j = 0; j < m->njnt; ++j)
+    {
+      // joint name is stored in m->names using m->name_jntadr[j] offset
+      const char* joint_name = m->names + m->name_jntadr[j];
+
+      std::cout << "Joint " << j << ": " << joint_name << "\n";
+    }
+
+    for (int a = 0; a < m->nu; ++a)
+    {
+      const char* name = m->names + m->name_actuatoradr[a];
+      if (!name || name[0] == '\0')
+        name = "<unnamed>";
+
+      int type = m->actuator_trntype[a];
+
+      double umin = m->actuator_ctrlrange[2 * a + 0];
+      double umax = m->actuator_ctrlrange[2 * a + 1];
+
+      std::cout << "Actuator " << a << " | name: " << name << " | ctrlrange: [" << umin << ", "
+                << umax << "]\n";
+    }
     bool simulation_start = false;
     while (!glfwWindowShouldClose(window))
     {
@@ -378,50 +336,39 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
       //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
       //  this loop will finish on time for the next frame to be rendered at 60 fps.
       //  Otherwise add a cpu timer and exit this loop when it is time to render.
-      mjtNum simstart    = d->time;
-      mjuiDef defJoint[] = {{mjITEM_SECTION, "Joint", mjPRESERVE, nullptr, "AJ"}, {mjITEM_END}};
-      while (d->time - simstart < 1.0 / 60.0)
+      if (!simulation_flags_->pause)
       {
-        mj_step(m, d);
-      }
+        mjtNum simstart = d->time;
+        while (d->time - simstart < 1.0 / 60.0)
+        {
+          mj_step(m, d);
+        }
 
 
-      // update scene and render
-      mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
+        // update scene and render
+        mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
 
-      // Render
-      int width, height;
-      glfwGetFramebufferSize(window, &width, &height);
-      mjrRect viewport = {0, 0, width, height};
+        // Render
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        mjrRect viewport = {0, 0, width, height};
 
-      mjr_render(viewport, &scn, &con);
-      // If Shift toggled it on, draw UI
+        mjr_render(viewport, &scn, &con);
+        // If Shift toggled it on, draw UI
 
-      if (ui_visible)
-      {
-        uistate.nrect          = 1;
-        uistate.rect[0].left   = 0;
-        uistate.rect[0].bottom = 0;
-        uistate.rect[0].width  = width / 3;
-        uistate.rect[0].height = height;
-        std::cout << std::flush << "Unlocking and notifying 0 " << std::endl;
-        mjr_rectangle(uistate.rect[0], 0.2, 0.2, 0.2, 0.7);
-        mjui_render(&ui0, &uistate, &con);
-        std::cout << std::flush << "Unlocking and notifying 1" << std::endl;
-      }
-      
-      // swap OpenGL buffers (blocking call due to v-sync)
-      glfwSwapBuffers(window);
+        // swap OpenGL buffers (blocking call due to v-sync)
+        glfwSwapBuffers(window);
 
-      // process pending GUI events, call GLFW callbacks
+        // process pending GUI events, call GLFW callbacks
 
-      if (!simulation_start & !single_thread)
-      {
-        std::cout << std::flush << "Unlocking and notifying" << std::endl;
-        simulation_start = true;
-        processed        = true;
-        lk.unlock();
-        cv.notify_one();
+        if (!simulation_start & !single_thread)
+        {
+          std::cout << std::flush << "Unlocking and notifying" << std::endl;
+          simulation_start = true;
+          processed        = true;
+          lk.unlock();
+          cv.notify_one();
+        }
       }
     }
   }

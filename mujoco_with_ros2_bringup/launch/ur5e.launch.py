@@ -61,14 +61,16 @@ def generate_launch_description():
     controllers_active = [
         "joint_state_broadcaster",
         "interpolation_controller",
+        "gripper_sample_controller",
+        #"joint_trajectory_controller",
         "force_torque_sensor_broadcaster",
     ]
     
     controllers_inactive = [
         "adaptive_mpc_controller",
-        "interpoaltion_example_controller",
-        "effort_controller",
-        "joint_trajectory_controller"
+        # "interpoaltion_example_controller",
+        # "effort_controller",
+        
     ]
     
     spawner_nodes = []

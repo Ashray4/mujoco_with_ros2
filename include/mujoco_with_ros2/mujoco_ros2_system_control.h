@@ -82,6 +82,7 @@ protected:
   std::vector<double> joint_command_pos_vector_;
   std::vector<double> joint_command_vel_vector_;
   std::vector<double> joint_command_eff_vector_;
+  std::vector<double> joint_command_eef_pos_vector_;
 
 public:
   std::unique_ptr<ManageMujoco> mujoco_manager;

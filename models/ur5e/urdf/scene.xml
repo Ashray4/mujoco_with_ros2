@@ -1,22 +1,25 @@
 <mujoco model="ur5e scene">
 
-  <statistic center="0.3 0 0.4" extent="0.8"/>
-  <option integrator="implicitfast"  gravity="0 0 -9.81"/>
+  <statistic center="0.3 0 0.4" extent="0.8" />
+  <option integrator="implicitfast" gravity="0 0 -9.81" />
 
   <visual>
-    <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0 0 0"/>
-    <rgba haze="0.15 0.25 0.35 1"/>
-    <global azimuth="120" elevation="-20"/>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0 0 0" />
+    <rgba haze="0.15 0.25 0.35 1" />
+    <global azimuth="120" elevation="-20" />
   </visual>
 
   <asset>
-    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
-    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
-      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512"
+      height="3072" />
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4"
+      rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300" />
     <texture name="iron" type="2d" builtin="flat" height="32" width="32" rgb1="0.45 0.45 0.45" />
 
-    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
-    <material name="steel" texture="iron" shininess="0.9" specular="0.75" reflectance="0.3"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5"
+      reflectance="0.2" />
+    <material name="steel" texture="iron" shininess="0.9" specular="0.75" reflectance="0.3" />
 
     <mesh file="environment\table.stl" />
     <mesh file="environment\Simplyfied_Galgen_2.stl" />
@@ -25,45 +28,62 @@
   </asset>
 
   <worldbody>
-    <light pos="0 0 2.5" directional="true"/>
-    <body name="free_red_box" pos="0.2 0 0.97" >
-      <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
-      <geom name="red_box" type="box" size=".03 .03 .03" pos="0 0 0" rgba="1 0 0 1"  friction="1.0 0.5 0.0001" solimp="0.99 0.99 0.01" solref="0.02 1"/> <!-- -->
+    <light pos="0 0 2.5" directional="true" />
+    <body name="free_red_box" pos="0.2 0 0.97">
+      <freejoint />
+      <inertial pos="0 0 0" mass="0.2" diaginertia="0.0001 0.0001 0.0001" />
+      <geom name="red_box" type="box" size=".03 .03 .03" rgba="1 0 0 1"
+        friction="1.0 0.005 0.0001"
+        solimp="0.95 0.99 0.001"
+        solref="0.004 1"
+        condim="4"
+        contype="1"
+        conaffinity="1" />
     </body>
 
-    <body name="free_green_box" pos="0.3 0.3 0.97" >
-      <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
-      <geom name="green_box" type="box"  size=".03 .03 .03" pos="0 0 0" rgba="0 1 0 1" friction="1.0 0.5 0.0001" solimp="0.99 0.99 0.01" solref="0.02 1"/>  <!--   friction="1.0 0.5 0.0001" solimp="0.99 0.99 0.01" solref="0.02 1"-->
+    <body name="free_green_box" pos="0.3 0.3 0.97">
+      <inertial pos="0 0 0" mass="0.1" diaginertia="1 1 1" />
+      <geom name="green_box" type="box" size=".03 .03 .03" pos="0 0 0" rgba="0 1 0 1"
+        friction="1.0 0.5 0.0001" solimp="0.95 0.99 0.001" solref="0.004 1" />  <!--   friction="1.0 0.5
+      0.0001" solimp="0.99 0.99 0.01" solref="0.02 1"-->
     </body>
-    
-    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane" />
     <body name="table1" pos="0 0 0" euler="0 0 -3.14159265359">
       <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
-      <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1" contype="1"/>
+      <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1"
+        contype="1" />
     </body>
     <!-- plate1 -->
     <body name="plate1" pos="0 -0.145 0.95" euler="0 0 -3.14159265359">
       <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
-      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4"/>
+      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4" />
     </body>
 
-        
+
     <!--table2-->
     <body name="table2" pos="0 0.811 0.0" euler="0 0 0">
       <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
-      <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1" contype="1"/>
+      <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1"
+        contype="1" />
     </body>
     <!--plate2 -->
     <body name="plate2" pos="0 0.961 0.95" euler="0 0 0">
       <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
-      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4"/>
+      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4" />
     </body>
-        <!-- <body name="canteveler" pos="0.35 0.38 0.85" euler="0 0 0">
+    <!-- <body name="canteveler" pos="0.35 0.38 0.85" euler="0 0 0">
       <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
-      <geom type="mesh" mesh="Simplyfied_Galgen_2" material="steel" condim="4" conaffinity="1" contype="1"/>
+      <geom type="mesh" mesh="Simplyfied_Galgen_2" material="steel" condim="4" conaffinity="1"
+    contype="1"/>
     </body> -->
   </worldbody>
-
-    <include file="ur5e.xml"/>
-    <include file="d435i.xml"/>
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0 0 0" />
+    <rgba haze="0.15 0.25 0.35 1" />
+    <global azimuth="120" elevation="-20" />
+    <scale contactwidth="0.1" contactheight="0.03" />
+  </visual>
+  <include file="ur5e.xml" />
+  <include file="d435i.xml" />
 </mujoco>

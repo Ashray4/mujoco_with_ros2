@@ -17,6 +17,12 @@ enum class CommandTypes
   SENSOR
   
 };
+struct SimulationInteraction
+{
+  bool pause = false;
+  bool reset;
+
+};
 struct QueueBuffers
 {
   using QueueType = realtime_tools::LockFreeQueueBase<double, boost::lockfree::spsc_queue<double> >;

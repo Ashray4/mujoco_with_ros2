@@ -1,4 +1,4 @@
-<mujoco model="ur5e scene">
+<mujoco model="truck_assembly_scene">
 
   <statistic center="0.3 0 0.4" extent="0.8" />
   <option integrator="implicitfast" gravity="0 0 -9.81" />
@@ -29,11 +29,51 @@
 
   <worldbody>
     <light pos="0 0 2.5" directional="true" />
-    <body name="free_red_box" pos="0.2 0 0.97">
+
+    <!-- ========================= -->
+    <!-- TRUCK ASSEMBLY PARTS      -->
+    <!-- ========================= -->
+
+    <!-- ======================================== -->
+    <!-- PART 1: Truck Body Frame with 2 pegs    -->
+    <!-- Pegs pointing UP (away from table)      -->
+    <!-- ======================================== -->
+    <body name="truck_body_frame" pos="-0.30 0.40 1.0" euler="0 0 1.5708">
       <freejoint />
-      <inertial pos="0 0 0" mass="0.2" diaginertia="0.0001 0.0001 0.0001" />
-      <geom name="red_box" type="box" size=".03 .03 .03" rgba="1 0 0 1"
-        friction="1.0 0.005 0.0001"
+
+      <!-- Main truck body/chassis (rectangular base) -->
+      <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.0005" />
+      <geom name="truck_chassis"
+        type="box"
+        size="0.08 0.03 0.015"
+        rgba="0.2 0.2 0.8 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001"
+        solref="0.004 1"
+        condim="4"
+        contype="1"
+        conaffinity="1" />
+
+      <!-- PEG 1: For container (rear position) - pointing UP -->
+      <geom name="peg_container"
+        type="cylinder"
+        pos="-0.04 0 0.040"
+        size="0.008 0.025"
+        rgba="0.95 0.85 0.2 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001"
+        solref="0.004 1"
+        condim="4"
+        contype="1"
+        conaffinity="1" />
+
+      <!-- PEG 2: For driver cabin (front position) - pointing UP -->
+      <geom name="peg_cabin"
+        type="cylinder"
+        pos="0.045 0 0.040"
+        size="0.008 0.025"
+        rgba="0.95 0.85 0.2 1"
+        friction="1.0 0.02 0.0001"
         solimp="0.95 0.99 0.001"
         solref="0.004 1"
         condim="4"
@@ -41,25 +81,264 @@
         conaffinity="1" />
     </body>
 
-    <body name="free_green_box" pos="0.3 0.3 0.97">
-      <inertial pos="0 0 0" mass="0.1" diaginertia="1 1 1" />
-      <geom name="green_box" type="box" size=".03 .03 .03" pos="0 0 0" rgba="0 1 0 1"
-        friction="1.0 0.5 0.0001" solimp="0.95 0.99 0.001" solref="0.004 1" />  <!--   friction="1.0 0.5
-      0.0001" solimp="0.99 0.99 0.01" solref="0.02 1"-->
+    <!-- ======================================== -->
+    <!-- PART 2: Container (cuboid) with hole    -->
+    <!-- Hole on BOTTOM (underneath)             -->
+    <!-- ======================================== -->
+    <body name="truck_container" pos="0.30 0.50 1.05">
+      <freejoint />
+
+      <inertial pos="0 0 0" mass="0.3" diaginertia="0.0008 0.0008 0.0004" />
+
+      <!-- Container body (larger cuboid) -->
+      <geom name="container_body"
+        type="box"
+        size="0.035 0.025 0.030"
+        rgba="0.8 0.3 0.1 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001"
+        solref="0.004 1"
+        condim="4"
+        contype="1"
+        conaffinity="1" />
+
+      <!-- Hole walls on the BOTTOM of container -->
+      <!-- Wall positions have NEGATIVE z to be underneath -->
+
+      <!-- +X wall -->
+      <geom name="container_hole_wall_px" type="box"
+        size="0.002 0.015 0.010"
+        pos="0.011 0 -0.040"
+        rgba="0.7 0.25 0.08 1"
+        friction="1.0 0.02 0.0001"
+        condim="4" contype="1" conaffinity="1" />
+
+      <!-- -X wall -->
+      <geom name="container_hole_wall_nx" type="box"
+        size="0.002 0.015 0.010"
+        pos="-0.011 0 -0.040"
+        rgba="0.7 0.25 0.08 1"
+        friction="1.0 0.02 0.0001"
+        condim="4" contype="1" conaffinity="1" />
+
+      <!-- +Y wall -->
+      <geom name="container_hole_wall_py" type="box"
+        size="0.015 0.002 0.010"
+        pos="0 0.011 -0.040"
+        rgba="0.7 0.25 0.08 1"
+        friction="1.0 0.02 0.0001"
+        condim="4" contype="1" conaffinity="1" />
+
+      <!-- -Y wall -->
+      <geom name="container_hole_wall_ny" type="box"
+        size="0.015 0.002 0.010"
+        pos="0 -0.011 -0.040"
+        rgba="0.7 0.25 0.08 1"
+        friction="1.0 0.02 0.0001"
+        condim="4" contype="1" conaffinity="1" />
+
+      <!-- Bottom plate with hole (ring-shaped) -->
+      <!-- Create 4 bottom plates around the hole -->
+      <geom name="container_bottom_px" type="box"
+        size="0.013 0.025 0.002"
+        pos="0.022 0 -0.032"
+        rgba="0.7 0.25 0.08 1"
+        friction="1.0 0.02 0.0001"
+        condim="4" contype="1" conaffinity="1" />
+
+      <geom name="container_bottom_nx" type="box"
+        size="0.013 0.025 0.002"
+        pos="-0.022 0 -0.032"
+        rgba="0.7 0.25 0.08 1"
+        friction="1.0 0.02 0.0001"
+        condim="4" contype="1" conaffinity="1" />
     </body>
 
+    <!-- ======================================== -->
+    <!-- PART 3: Driver Cabin (cube) with hole   -->
+    <!-- Hole on BOTTOM (underneath)             -->
+    <!-- ======================================== -->
+<body name="driver_cabin" pos="-0.30 0.30 1.05" euler="-1.56159265359 0 0">
+  <freejoint />
+  <inertial pos="0 0 0" mass="0.2" diaginertia="0.0003 0.0003 0.0003" />
+
+  <!-- NOTE: No solid visual box here.
+       The "box" is formed by slabs + ring segments, leaving an actual open hole.
+  -->
+
+  <!-- Outer half-sizes: sx=sy=sz=0.025
+       Peg radius = 0.008 -> hole radius ~ 0.0085
+       Ring thickness t = 0.004 -> r_out = 0.0125
+       Everything spans full height (sz=0.025) => hole from top to bottom
+  -->
+
+  <!-- Outer fill (frame) leaving a central opening -->
+  <geom name="cabin_fill_px" type="box"
+        size="0.00625 0.025 0.025"
+        pos="0.01875 0 0"
+        rgba="0.1 0.7 0.3 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_fill_nx" type="box"
+        size="0.00625 0.025 0.025"
+        pos="-0.01875 0 0"
+        rgba="0.1 0.7 0.3 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_fill_py" type="box"
+        size="0.0125 0.00625 0.025"
+        pos="0 0.01875 0"
+        rgba="0.1 0.7 0.3 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_fill_ny" type="box"
+        size="0.0125 0.00625 0.025"
+        pos="0 -0.01875 0"
+        rgba="0.1 0.7 0.3 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <!-- 16-segment circular wall (hole boundary), axis = local Z (top-to-bottom) -->
+  <geom name="cabin_hole_00" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0105 0.0000 0" euler="0 0 0.0000"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_01" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0097 0.0040 0" euler="0 0 0.3927"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_02" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0074 0.0074 0" euler="0 0 0.7854"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_03" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0040 0.0097 0" euler="0 0 1.1781"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_04" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0000 0.0105 0" euler="0 0 1.5708"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_05" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0040 0.0097 0" euler="0 0 1.9635"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_06" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0074 0.0074 0" euler="0 0 2.3562"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_07" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0097 0.0040 0" euler="0 0 2.7489"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_08" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0105 0.0000 0" euler="0 0 3.1416"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_09" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0097 -0.0040 0" euler="0 0 3.5343"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_10" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0074 -0.0074 0" euler="0 0 3.9270"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_11" type="box" size="0.0020 0.0035 0.025"
+        pos="-0.0040 -0.0097 0" euler="0 0 4.3197"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_12" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0000 -0.0105 0" euler="0 0 4.7124"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_13" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0040 -0.0097 0" euler="0 0 5.1051"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_14" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0074 -0.0074 0" euler="0 0 5.4978"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+
+  <geom name="cabin_hole_15" type="box" size="0.0020 0.0035 0.025"
+        pos="0.0097 -0.0040 0" euler="0 0 5.8905"
+        rgba="0.08 0.6 0.25 1"
+        friction="1.0 0.02 0.0001"
+        solimp="0.95 0.99 0.001" solref="0.004 1"
+        condim="4" contype="1" conaffinity="1"/>
+</body>
+
+
+
+
+    <!-- ========================= -->
+    <!-- ENVIRONMENT               -->
+    <!-- ========================= -->
+
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane" />
+
     <body name="table1" pos="0 0 0" euler="0 0 -3.14159265359">
       <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
       <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1"
         contype="1" />
     </body>
+
     <!-- plate1 -->
     <body name="plate1" pos="0 -0.145 0.95" euler="0 0 -3.14159265359">
       <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
       <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4" />
     </body>
-
 
     <!--table2-->
     <body name="table2" pos="0 0.811 0.0" euler="0 0 0">
@@ -67,23 +346,21 @@
       <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1"
         contype="1" />
     </body>
+
     <!--plate2 -->
     <body name="plate2" pos="0 0.961 0.95" euler="0 0 0">
       <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
       <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4" />
     </body>
-    <!-- <body name="canteveler" pos="0.35 0.38 0.85" euler="0 0 0">
-      <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
-      <geom type="mesh" mesh="Simplyfied_Galgen_2" material="steel" condim="4" conaffinity="1"
-    contype="1"/>
-    </body> -->
   </worldbody>
+
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0 0 0" />
     <rgba haze="0.15 0.25 0.35 1" />
     <global azimuth="120" elevation="-20" />
     <scale contactwidth="0.1" contactheight="0.03" />
   </visual>
+
   <include file="ur5e.xml" />
   <include file="d435i.xml" />
 </mujoco>

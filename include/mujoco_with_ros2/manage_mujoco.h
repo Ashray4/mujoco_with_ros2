@@ -62,6 +62,7 @@ public:
   std::shared_ptr<StateBuffer> eef_state_buffer_;
   std::shared_ptr<StateBuffer> sensor_buffer_;
   std::shared_ptr<SimulationInteraction> simulation_flags_;
+  std::vector<double> joint_init_pos_vector_;
   CommandTypes control_mode_;
   std::string tool;
 

@@ -196,8 +196,10 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
       CommandTypes::POSITION, j, d->qpos[m->jnt_qposadr[mujoco_eef_ids_[j]]]);
     eef_state_buffer_->push_value(
       CommandTypes::VELOCITY, j, d->qvel[m->jnt_dofadr[mujoco_eef_ids_[j]]]);
-    eef_state_buffer_->push_value(
-      CommandTypes::EFFORT, j, d->qacc[m->jnt_dofadr[mujoco_eef_ids_[j]]]);
+    eef_state_buffer_->push_value(CommandTypes::EFFORT,
+                                  j,
+                                  d->qfrc_actuator[mujoco_eef_ids_[j]] +
+                                    d->qfrc_applied[mujoco_eef_ids_[j]]);
   }
 
   // better automated ways and not hardcoding
@@ -218,12 +220,6 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
       CommandTypes::VELOCITY, i, d->qvel[m->jnt_dofadr[mujoco_joint_ids_[i]]]);
     state_buffer_->push_value(
       CommandTypes::EFFORT, i, d->qacc[m->jnt_dofadr[mujoco_joint_ids_[i]]]);
-  }
-
-  // better automated ways and not hardcoding
-  for (int i = 0; i < mujoco_sensor_ids_.size(); i++)
-  {
-    sensor_buffer_->push_value(CommandTypes::SENSOR, i, d->sensordata[mujoco_sensor_ids_[i]]);
   }
 }
 void MujocoInitLoadObjects::init(mjModel* mujoco_model, mjData* mujoco_data)
@@ -302,6 +298,7 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
 
     mjcb_control = MujocoInitLoadObjects::controlCB;
 
+
     // ... install GLFW keyboard and mouse callbacks
 
     // run main loop, target real-time simulation and 60 fps rendering
@@ -342,6 +339,97 @@ void MujocoInitLoadObjects::starting_simulation(bool single_thread)
         while (d->time - simstart < 1.0 / 60.0)
         {
           mj_step(m, d);
+        }
+
+        // better automated ways and not hardcoding
+        // gravity compensation, can be multiple different sensors but just for this case
+        // (hardcoded)
+
+        // initialize variables for gravity compensation
+        site_id = mj_name2id(m, mjOBJ_SITE, "motor_fts");
+        body_id = mj_name2id(m, mjOBJ_BODY, "tool0");
+        g       = {m->opt.gravity[0], m->opt.gravity[1], m->opt.gravity[2]};
+        m_sub   = m->body_subtreemass[body_id];
+        // Get gravity vector
+        mjtNum g[3] = {m->opt.gravity[0], m->opt.gravity[1], m->opt.gravity[2]};
+
+        // Get the ACTUAL mass that causes force at the sensor
+        // This is the subtree mass BELOW the sensor location
+        m_sub = m->body_subtreemass[body_id];
+
+        // Get COM of the subtree in world frame
+        mjtNum p_com[3];
+        p_com[0] = d->subtree_com[3 * body_id + 0];
+        p_com[1] = d->subtree_com[3 * body_id + 1];
+        p_com[2] = d->subtree_com[3 * body_id + 2];
+
+        // Get sensor site position in world frame
+        mjtNum p_site[3];
+        p_site[0] = d->site_xpos[3 * site_id + 0];
+        p_site[1] = d->site_xpos[3 * site_id + 1];
+        p_site[2] = d->site_xpos[3 * site_id + 2];
+
+        // ===== ADD INERTIAL COMPENSATION FOR MOVING ROBOT =====
+        // Get COM acceleration in world frame
+        mjtNum acc_com[3];
+        mj_objectAcceleration(m, d, mjOBJ_BODY, body_id, acc_com, 0);
+
+        // Inertial force in world frame: F = m * a
+        mjtNum Fi_world[3];
+        Fi_world[0] = -m_sub * acc_com[0];
+        Fi_world[1] = -m_sub * acc_com[1];
+        Fi_world[2] = -m_sub * acc_com[2];
+
+        // Gravitational force in world frame
+        mjtNum Fg_world[3];
+        Fg_world[0] = m_sub * g[0];
+        Fg_world[1] = m_sub * g[1];
+        Fg_world[2] = m_sub * g[2];
+
+        // Total compensation force (gravity + inertia)
+        mjtNum Ftotal_world[3];
+        Ftotal_world[0] = Fg_world[0];
+        Ftotal_world[1] = Fg_world[1];
+        Ftotal_world[2] = Fg_world[2];
+
+        // Lever arm from sensor to COM
+        mjtNum r[3];
+        r[0] = p_com[0] - p_site[0];
+        r[1] = p_com[1] - p_site[1];
+        r[2] = p_com[2] - p_site[2];
+
+        // Torque in world: r × F_total
+        mjtNum Ttotal_world[3];
+        mju_cross(Ttotal_world, r, Ftotal_world);
+
+        // Transform to sensor frame using site rotation matrix
+        const mjtNum* R = d->site_xmat + 9 * site_id;
+
+        // Rotate force to sensor frame: F_site = R^T * F_world
+        mjtNum Ftotal_site[3];
+        mju_mulMatTVec(Ftotal_site, R, Ftotal_world, 3, 3);
+
+        // Rotate torque to sensor frame: T_site = R^T * T_world
+        mjtNum Ttotal_site[3];
+        mju_mulMatTVec(Ttotal_site, R, Ttotal_world, 3, 3);
+
+        // Compensate the sensor readings - apply compensation in the direction that reduces
+        // magnitude
+        mjtNum w_comp[6];
+
+        for (int i = 0; i < 3; i++)
+        {
+          w_comp[i] = d->sensordata[mujoco_sensor_ids_[i]] + Ftotal_site[i];
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+          w_comp[i + 3] = d->sensordata[mujoco_sensor_ids_[i + 3]] + Ttotal_site[i];
+        }
+
+        for (int i = 0; i < mujoco_sensor_ids_.size(); i++)
+        {
+          sensor_buffer_->push_value(CommandTypes::SENSOR, i, w_comp[i]);
         }
 
 

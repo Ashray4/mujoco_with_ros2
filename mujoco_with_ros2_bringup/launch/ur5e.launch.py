@@ -60,7 +60,8 @@ def generate_launch_description():
 
     controllers_active = [
         "joint_state_broadcaster",
-        "interpolation_controller",
+        # "admittance_controller",
+        
         "gripper_sample_controller",
         #"joint_trajectory_controller",
         "force_torque_sensor_broadcaster",
@@ -68,6 +69,7 @@ def generate_launch_description():
     
     controllers_inactive = [
         "adaptive_mpc_controller",
+        "interpolation_controller",
         # "interpoaltion_example_controller",
         # "effort_controller",
         

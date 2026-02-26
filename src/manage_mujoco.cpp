@@ -55,10 +55,13 @@ ManageMujoco::ManageMujoco(int n_joints,
     }
   }
 
+  // (hardcoded) initial q , add to constructor definition (doesn't work properly)
+  joint_init_pos_vector_ = {4.72739881, -1.88774812, -1.1957251, -4.7682395, -1.6147786, 4.56333786};
+
   for (size_t j = 0; j < mujoco_joint_names_.size(); j++)
   {
     // initialize commands to 0 and add the command type logic later
-    command_buffer_->push_value(control_mode_, j, 0.0); // hardcoded
+    command_buffer_->push_value(control_mode_, j, joint_init_pos_vector_[j]); // hardcoded
   }
 
   for (size_t j = 0; j < eef_names_.size(); j++)

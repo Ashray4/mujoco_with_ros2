@@ -25,23 +25,24 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   }
 
   // Zero Initialize all joint positions for now (T0:Do read initial positions from the model)
-  joint_pos_vector_.resize(info.joints.size(), 0.0);
-  joint_vel_vector_.resize(info.joints.size(), 0.0);
-  joint_eff_vector_.resize(info.joints.size(), 0.0);
+  joint_pos_vector_.resize(info_.joints.size(), 0.0);
+  joint_vel_vector_.resize(info_.joints.size(), 0.0);
+  joint_eff_vector_.resize(info_.joints.size(), 0.0);
   sensor_vector_.resize(6, 0.0); // hardcoded
 
-  joint_command_pos_vector_.resize(info.joints.size(), 0.0);
-  joint_command_vel_vector_.resize(info.joints.size(), 0.0);
-  joint_command_eff_vector_.resize(info.joints.size(), 0.0);
+  joint_command_pos_vector_.resize(info_.joints.size(), 0.0);
+  joint_command_vel_vector_.resize(info_.joints.size(), 0.0);
+  joint_command_eff_vector_.resize(info_.joints.size(), 0.0);
 
 
   // initialize simulation
   // hardcoded, add the real joints later
-  // ur5e_joint_names.resize(info.joints.size());
-  // for (size_t i = 0; i < info_.joints.size(); i++)
-  // {
-  //   ur5e_joint_names[i] = info_.joints[i].name;
-  // }
+  // ur5e_joint_names.resize(info_.joints.size());
+  for (size_t i = 0; i < info_.joints.size(); i++)
+  {
+    std::cout << std::endl << info_.joints[i].name << std::endl;
+    std::cout << std::endl << joint_command_pos_vector_.size() << std::endl;
+  }
   ur5e_joint_names = {"shoulder_pan_joint",
                       "shoulder_lift_joint",
                       "elbow_joint",
@@ -181,6 +182,7 @@ MujocowithRos2SystemHardware::export_command_interfaces()
     {
       command_interfaces.emplace_back(hardware_interface::CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_POSITION, &joint_command_pos_vector_[i]));
+      std::cout << std::endl << info_.joints[i].name << std ::endl;
     }
 
     if (info_.joints[i].command_interfaces[0].name == hardware_interface::HW_IF_VELOCITY)
@@ -193,6 +195,7 @@ MujocowithRos2SystemHardware::export_command_interfaces()
       command_interfaces.emplace_back(hardware_interface::CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_command_eff_vector_[i]));
     }
+    std::cout << std::endl <<"joint size: "<<joint_command_pos_vector_.size() << std::endl;
   }
 
   return command_interfaces;
@@ -206,6 +209,7 @@ MujocowithRos2SystemHardware::on_configure(const rclcpp_lifecycle::State& /*prev
 
 
   mujoco_manager = std::make_unique<ManageMujoco>(6, ur5e_joint_names, command_types_);
+
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully configured!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -232,6 +236,7 @@ MujocowithRos2SystemHardware::on_activate(const rclcpp_lifecycle::State& /*previ
 {
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Activating ...please wait...");
   mujoco_manager->launch_simulation();
+  joint_command_pos_vector_ = mujoco_manager.get()->joint_init_pos_vector_;
   RCLCPP_INFO(rclcpp::get_logger("MujocowithRos2SystemHardware"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -309,8 +314,9 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
     {
       success = mujoco_manager->command_buffer_->push_value(
         command_types_, i, joint_command_pos_vector_[i]);
-      // std::cout << std::flush << "Pushing effort[" << i << "]: "
-      //          << joint_command_pos_vector_[i] << " success: " << success << std::endl;
+      // std::cout << std::flush << "Pushing position[" << i << "]: " <<
+      // joint_command_pos_vector_[i]
+      //           << " success: " << success << std::endl;
     }
     else if (command_types_ == mujoco_with_ros2::CommandTypes::VELOCITY)
     {
@@ -328,8 +334,15 @@ MujocowithRos2SystemHardware::write(const rclcpp::Time& /*time*/,
 
   // hardcoded only supports position interface for now
   auto ss = mujoco_manager->eef_command_buffer_->push_value(
-    mujoco_with_ros2::CommandTypes::POSITION, 0, joint_command_pos_vector_.back());
-
+    mujoco_with_ros2::CommandTypes::POSITION, 0, joint_command_pos_vector_[6]);
+  // std::cout << std::flush
+  //           << "Size["
+  //              "]: "
+  //           << joint_command_pos_vector_.size() << std::endl;
+  // std::cout << std::flush
+  //           << "eef["
+  //              "]: "
+  //           << joint_command_pos_vector_.back() << std::endl;
   return hardware_interface::return_type::OK;
 }
 

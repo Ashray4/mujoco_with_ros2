@@ -88,6 +88,23 @@ public:
   bool button_right  = false;
   double lastx       = 0;
   double lasty       = 0;
+  std::array<mjtNum, 3> g;
+  std::array<mjtNum, 3> p_com;
+  std::array<mjtNum, 3> p_site;
+  std::array<mjtNum, 3> Fg_world;
+  int site_id;
+  int body_id;
+  mjtNum m_sub;
+  std::array<mjtNum, 3> r;
+  std::array<mjtNum, 3> Tg_world;
+  std::array<mjtNum, 3> Fg_site, Tg_site;
+  std::array<mjtNum, 6> w_comp;
+  bool taring_                = true;
+  int tare_count_             = 0;
+  static constexpr int TARE_N = 200; // ~200 steps
+  std::array<mjtNum, 6> tare_sum_{0, 0, 0, 0, 0, 0};
+  bool tare_valid_ = false;
+  std::array<mjtNum, 6> tare_bias_{0, 0, 0, 0, 0, 0};
 
   // multi threading requirements
   bool is_deleted = false;

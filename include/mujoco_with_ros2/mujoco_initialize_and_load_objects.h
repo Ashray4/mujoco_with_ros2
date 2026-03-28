@@ -113,6 +113,7 @@ public:
   std::vector<int> mujoco_joint_ids_;
   std::vector<int> mujoco_eef_ids_;
   std::vector<int> mujoco_sensor_ids_;
+  std::vector<int> mujoco_body_ids_;
   CommandTypes command_type_;
   // Joint Names
   std::vector<std::string> ur5e_joint_names;
@@ -123,6 +124,7 @@ public:
   std::shared_ptr<StateBuffer> state_buffer_;
   std::shared_ptr<StateBuffer> eef_state_buffer_;
   std::shared_ptr<StateBuffer> sensor_buffer_;
+  std::shared_ptr<StateBuffer> body_buffer_;
   std::shared_ptr<SimulationInteraction> simulation_flags_;
 
   //(To Review maybe a better way (Singleton Class))
@@ -167,10 +169,12 @@ public:
                           std::shared_ptr<StateBuffer> s_buff,
                           std::shared_ptr<StateBuffer> sens_buff,
                           std::shared_ptr<StateBuffer> s_eff_buff,
+                          std::shared_ptr<StateBuffer> body_buff,
                           std::shared_ptr<SimulationInteraction> simulation_flags,
                           std::vector<int> joint_ids_,
                           std::vector<int> eef_ids_,
-                          std::vector<int> sensor_ids_);
+                          std::vector<int> sensor_ids_,
+                          std::vector<int> body_ids_);
 };
 
 

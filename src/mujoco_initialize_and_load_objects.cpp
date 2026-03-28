@@ -33,19 +33,23 @@ void MujocoInitLoadObjects::initialize_buffers(
   std::shared_ptr<StateBuffer> s_buff,
   std::shared_ptr<StateBuffer> sens_buff,
   std::shared_ptr<StateBuffer> s_eef_buff,
+  std::shared_ptr<StateBuffer> body_buff,
   std::shared_ptr<SimulationInteraction> simulation_flags,
   std::vector<int> joint_ids_,
   std::vector<int> eef_ids_,
-  std::vector<int> sensor_ids_)
+  std::vector<int> sensor_ids_,
+  std::vector<int> body_ids_)
 {
   command_buffer_     = c_buff;
   eef_command_buffer_ = c_eef_buff;
   state_buffer_       = s_buff;
   eef_state_buffer_   = s_eef_buff;
+  body_buffer_        = body_buff;
   mujoco_joint_ids_   = joint_ids_;
   mujoco_eef_ids_     = eef_ids_;
   mujoco_sensor_ids_  = sensor_ids_;
   sensor_buffer_      = sens_buff;
+  mujoco_body_ids_    = body_ids_;
   command_type_       = command_buffer_->get_command_type();
   simulation_flags_   = simulation_flags;
 }
@@ -182,7 +186,27 @@ void MujocoInitLoadObjects::controlCBImpl(const mjModel* m, mjData* d)
   //     std::cout << d->sensordata[start + i] << std::endl;
   // }
 
+  // hardcoded
+  mjtNum body_values[6] = {d->site_xpos[3 * mujoco_body_ids_[0] + 0],
+                           d->site_xpos[3 * mujoco_body_ids_[0] + 1],
+                           d->site_xpos[3 * mujoco_body_ids_[0] + 2],
+                           d->site_xpos[3 * mujoco_body_ids_[1] + 0],
+                           d->site_xpos[3 * mujoco_body_ids_[1] + 1],
+                           d->site_xpos[3 * mujoco_body_ids_[1] + 2]};
 
+  for (int i = 0; i < 6; i++)
+  {
+    body_buffer_->push_value(
+      CommandTypes::POSITION, i, body_values[i]);
+  }
+
+  // mjtNum peg_center[3] = {d->site_xpos[3 * peg_site_id + 0],
+  //                         d->site_xpos[3 * peg_site_id + 1],
+  //                         d->site_xpos[3 * peg_site_id + 2]};
+
+  // mjtNum hole_center[3] = {d->site_xpos[3 * hole_site_id + 0],
+  //                          d->site_xpos[3 * hole_site_id + 1],
+  //                          d->site_xpos[3 * hole_site_id + 2]};
   // hardcoded, seperate end effector somehow ?
   for (size_t j = 0; j < mujoco_eef_ids_.size(); j++)
   {

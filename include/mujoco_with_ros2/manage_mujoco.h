@@ -19,7 +19,8 @@ private:
   std::vector<int> mujoco_joint_ids_;
   std::vector<int> mujoco_sensor_ids_;
   std::vector<int> mujoco_eef_ids_;
-  
+  std::vector<int> mujoco_body_ids_;
+
   // Mujoco Simulation Variables
   size_t queue_size_;
 
@@ -60,6 +61,7 @@ public:
   std::shared_ptr<CommandBuffer> eef_command_buffer_;
   std::shared_ptr<StateBuffer> state_buffer_;
   std::shared_ptr<StateBuffer> eef_state_buffer_;
+  std::shared_ptr<StateBuffer> body_state_buffer_;
   std::shared_ptr<StateBuffer> sensor_buffer_;
   std::shared_ptr<SimulationInteraction> simulation_flags_;
   std::vector<double> joint_init_pos_vector_;

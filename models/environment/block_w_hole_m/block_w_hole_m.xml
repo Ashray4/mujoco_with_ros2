@@ -1,0 +1,60 @@
+<mujoco model="block_w_hole_m">
+  <compiler angle="radian" />
+
+  <default>
+    <default class="visual">
+      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="3" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <mesh file="block_w_hole_m.obj"/>
+    <mesh file="block_w_hole_m_collision_0.obj"/>
+    <mesh file="block_w_hole_m_collision_1.obj"/>
+    <mesh file="block_w_hole_m_collision_2.obj"/>
+    <mesh file="block_w_hole_m_collision_3.obj"/>
+    <mesh file="block_w_hole_m_collision_4.obj"/>
+    <mesh file="block_w_hole_m_collision_5.obj"/>
+    <mesh file="block_w_hole_m_collision_6.obj"/>
+    <mesh file="block_w_hole_m_collision_7.obj"/>
+    <mesh file="block_w_hole_m_collision_8.obj"/>
+    <mesh file="block_w_hole_m_collision_9.obj"/>
+    <mesh file="block_w_hole_m_collision_10.obj"/>
+    <mesh file="block_w_hole_m_collision_11.obj"/>
+    <mesh file="block_w_hole_m_collision_12.obj"/>
+    <mesh file="block_w_hole_m_collision_13.obj"/>
+    <mesh file="block_w_hole_m_collision_14.obj"/>
+    <mesh file="block_w_hole_m_collision_15.obj"/>
+    <mesh file="block_w_hole_m_collision_16.obj"/>
+    <mesh file="pin_bigger_bigger.stl"/>
+  </asset>
+  <worldbody>
+    <body name="block_w_hole_m" euler="0 1.57 1.57" pos="0 0 0">
+      <geom mesh="block_w_hole_m" class="visual"/>
+      <geom mesh="block_w_hole_m_collision_0" rgba="0.022457231989354565 0.11155928469987186 0.6507018293434248 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_1" rgba="0.274437311410075 0.6423475615804474 0.5916414932699113 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_2" rgba="0.5202473577635259 0.9587162011071416 0.3572052121406447 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_3" rgba="0.15402276467585718 0.922785888684969 0.8550944556267558 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_4" rgba="0.6297159927523371 0.0962224255889228 0.7118821542422223 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_5" rgba="0.9142264508070114 0.4267494631228689 0.044231418834157266 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_6" rgba="0.40506182574167915 0.07701127324421186 0.8027034511841786 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_7" rgba="0.5250436427932563 0.5308992397181914 0.9684872596574604 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_8" rgba="0.8122467413907666 0.38457037472001754 0.4921009809297652 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_9" rgba="0.4576491369049551 0.012731726802567178 0.7322948389562864 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_10" rgba="0.49447000526386775 0.029793590480261645 0.09586350110938602 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_11" rgba="0.39379951914433875 0.02047470625979797 0.29631724115371394 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_12" rgba="0.13238332071442893 0.36964137658542995 0.3805726896670507 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_13" rgba="0.2902019870654572 0.4145347710273486 0.7511058882890603 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_14" rgba="0.3211912964024324 0.5679426840584924 0.7970848000209965 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_15" rgba="0.889129120579119 0.7016474800972939 0.47493600040374684 1" class="collision"/>
+      <geom mesh="block_w_hole_m_collision_16" rgba="0.45713661167334907 0.23757994984849007 0.8646471449280535 1" class="collision"/>
+    </body>
+    <body name="pin" pos="0 0 0.06">
+      <geom mesh="pin_bigger_bigger" class="visual"/>
+      <geom mesh="pin_bigger_bigger" class="collision"/>
+      <freejoint name="pin_freejoint"/>
+    </body>
+  </worldbody>
+</mujoco>

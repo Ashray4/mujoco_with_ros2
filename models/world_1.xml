@@ -1,0 +1,177 @@
+<mujoco>
+  
+
+  <compiler autolimits="true" angle="radian" inertiafromgeom="true" texturedir="textures" meshdir="environment" />
+
+  <option timestep="0.002" integrator="RK4" gravity="0 0 -9.81" cone="elliptic" impratio="10">
+    <flag energy="enable" contact="enable" /> <!-- viscosity="0.1"  -->
+  </option>
+  <!-- Add some fluid viscosity to prevent things from jiggling forever -->
+  <!-- condim="4", solimp="0.99 0.99 0.01", solref="0.01 1", and solver="elliptic"  for the better contact-->
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3" rgb2=".2 .3 .4" />
+    <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2" />
+    <texture name="iron" type="2d" builtin="flat" height="32" width="32" rgb1="0.45 0.45 0.45" />
+    <material name="steel" texture="iron" shininess="0.9" specular="0.75" reflectance="0.3"/>
+    <mesh file="table.stl" />
+    <mesh file="Simplyfied_Galgen_2.stl" />
+    <mesh file="Modul_Roboter_asm.stl" />
+    <mesh file="Adapterplatte_UR5.stl" />
+    <mesh file="hole_rounded_edge.stl" />
+    <mesh file="hole_large.stl" />
+    <mesh file="hole_huge.stl" />
+    <mesh file="triangle_hole.stl" />
+    <mesh file="square_hole.stl" />
+    <mesh file="pentagon_hole.stl" />
+    <mesh file="hexagon_hole.stl" />
+    <mesh file="block_w_hole_m.stl" />
+  </asset>
+  <!-- <include file="d435i.xml" /> -->
+  <worldbody>
+    <geom name="floor" size="0 0 .05" type="plane" material="grid" condim="3" />
+    <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5.0" dir="0 0 -1" castshadow="false"/>
+    <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
+    <!--table1-->
+    <body name="table1" pos="0 0 0" euler="0 0 -3.14159265359">
+      <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
+      <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1" contype="1"/>
+    </body>
+    <!-- plate1 -->
+    <body name="plate1" pos="0 -0.145 0.95" euler="0 0 -3.14159265359">
+      <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
+      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4"/>
+    </body>
+    
+     <!-- plate3 -->
+    <!-- <body name="plate3" pos="0.2 0.345 0.95" euler="0 0 -3.14159265359">
+      <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
+      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4"/>
+    </body> -->
+    
+    <!--table2-->
+    <!-- <body name="table2" pos="0 0.811 0.0" euler="0 0 0">
+      <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
+      <geom type="mesh" mesh="Modul_Roboter_asm" material="steel" condim="4" conaffinity="1" contype="1"/>
+    </body> -->
+    <!--plate2 -->
+    <!-- <body name="plate2" pos="0 0.961 0.95" euler="0 0 0">
+      <inertial pos="0 0 0" mass="10" diaginertia="1 1 1" />
+      <geom type="mesh" mesh="Adapterplatte_UR5" material="steel" condim="4"/>
+    </body> -->
+
+    <!-- hole -->
+    <body name="wallpart_1" pos="0 .3 .95" euler="0 0 0">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hole_large" rgba="0.0 0.1 0.8 1" friction=".2"/>
+    </body>
+    <body name="wallpart_2" pos="0 .3 .95" euler="0 0 1.570796">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hole_large" rgba="0.0 0.1 0.8 1" friction=".2"/>
+    </body>
+    <body name="wallpart_3" pos="0 .3 .95" euler="0 0 -1.570796">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hole_large" rgba="0.0 0.1 0.8 1" friction=".2"/>
+    </body>
+    <body name="wallpart_4" pos="0 .3 .95" euler="0 0 3.141592">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hole_large" rgba="0.0 0.1 0.8 1" friction=".2"/>
+    </body>
+
+    <!-- <body name="hole" pos="0 .3 .95" euler="0 0 0">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="block_w_hole_m" rgba="0.0 0.1 0.8 1" friction=".2"/>
+    </body> -->
+
+<!-- 
+    <body name="wallpart_1" pos="0 .3 .95" euler="0 0 0">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+
+    <body name="wallpart_2" pos="0 .3 .95" euler="0 0 1.0471975512">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+    <body name="wallpart_3" pos="0 .3 .95" euler="0 0 2.0943951024">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+        <body name="wallpart_4" pos="0 .3 .95" euler="0 0 3.1415926536">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+        <body name="wallpart_5" pos="0 .3 .95" euler="0 0 -1.0471975512">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+    <body name="wallpart_6" pos="0 .3 .95" euler="0 0 -2.0943951024">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body> -->
+
+
+
+
+    <!-- <body name="wallpart_1" pos="0 .3 .95" euler="0 0 0">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="pentagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+    <body name="wallpart_2" pos="0 .3 .95" euler="0 0 1.25664">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="pentagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+    <body name="wallpart_3" pos="0 .3 .95" euler="0 0 2.51328">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="pentagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+        <body name="wallpart_4" pos="0 .3 .95" euler="0 0 3.76992">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="pentagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+        <body name="wallpart_5" pos="0 .3 .95" euler="0 0 -1.25664">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="pentagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body> -->
+
+
+    <!-- <body name="wallpart_1" pos="0 .3 .95" euler="0 0 0">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="triangle_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+
+    <body name="wallpart_2" pos="0 .3 .95" euler="0 0 2.0944">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="triangle_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body>
+    <body name="wallpart_3" pos="0 .3 .95" euler="0 0 -2.0944">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="triangle_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body> -->
+
+
+
+        <!-- <body name="wallpart_7" pos="0 .3 .95" euler="0 0 -2.356194">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body> -->
+
+    <!-- <body name="wallpart_7" pos="0 .3 .95" euler="0 0 3.141592">
+      <inertial pos="0 0.0  0.0" mass="1" diaginertia="1 1 1"/>
+      <geom type="mesh" mesh="hexagon_hole" rgba="0.0 0.1 0.8 1" friction=".0001"/>
+    </body> -->
+
+
+    <!-- <body name="canteveler" pos="0.35 0.38 0.85" euler="0 0 0">
+      <inertial pos="0 0 0" mass="100" diaginertia="1 1 1" />
+      <geom type="mesh" mesh="Simplyfied_Galgen_2" material="steel" condim="4" conaffinity="1" contype="1"/>
+    </body> -->
+    <!-- peg -->
+    <!--<body name="peg" pos="0 .5 .99">
+      <joint type="free" armature="0.1" name="peg_joint"/>
+      <inertial pos="0 0 0 " mass="0.1" diaginertia="1 1 1"/>
+      <geom pos="0 0 0" type="mesh" condim="4" mesh="peg" rgba="0.4 0.1 0.8 1" friction="2" solimp="0.99 0.99 0.001" solref="0.01 1" priority="1" />
+    </body> -->
+
+  </worldbody>
+
+</mujoco>

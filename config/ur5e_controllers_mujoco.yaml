@@ -57,8 +57,8 @@ controller_manager:
     interpolation_controller:
       type: interpolation_controller/InterpolationController
 
-    adaptive_mpc_controller:
-      type: adaptive_mpc_controller/AdaptiveMPCController
+    adaptive_assembly_controller:
+      type: adaptive_assembly_controller/AdaptiveAssemblyController
 
     interpoaltion_example_controller:
       type: interpolation_controller_chaining_example_controller/InterpolationControllerChainingExample
@@ -74,6 +74,9 @@ controller_manager:
 
     admittance_controller:
       type: admittance_controller/AdmittanceController
+
+    mujoco_body_publisher:
+      type: mujoco_body_publisher/MujocoBodyPublisher
 
 speed_scaling_state_broadcaster:
   ros__parameters:
@@ -362,9 +365,9 @@ admittance_controller:
     # general settings
     enable_parameter_update_without_reactivation: true
 
-adaptive_mpc_controller:
+adaptive_assembly_controller:
   ros__parameters:
-    prediction_horizon: 10
+    prediction_horizon: 30
     sampling_time: 0.05
     force_sensor_name: motor_fts
     joint_names:
@@ -374,6 +377,15 @@ adaptive_mpc_controller:
       - wrist_1_joint
       - wrist_2_joint
       - wrist_3_joint
+    tracking:
+      solver: acados_torque
+    sliding:
+      solver: acados_sliding
+#  export ACADOS_ROOT="$HOME/checkout/thesis_ws/misc_ws/acados"
+#  ls "$ACADOS_ROOT/lib/link_libs.json"
+#  export ACADOS_SOURCE_DIR="$ACADOS_ROOT"
+#  export ACADOS_INSTALL_DIR="$ACADOS_ROOT"
+#  export LD_LIBRARY_PATH="$ACADOS_ROOT/lib:$LD_LIBRARY_PATH"
 
 cartesian_compliance_controller:
   ros__parameters:
@@ -545,3 +557,16 @@ admittance_controller:
       frame:
         id: base
         external: false
+
+mujoco_body_publisher:
+  ros__parameters:
+    frame_id: world
+    transform_world:
+      translation:
+        x: 0.0
+        y: 0.16
+        z: -0.98
+      rotation:
+        roll: 0.0
+        pitch: 0.0
+        yaw: 0.0

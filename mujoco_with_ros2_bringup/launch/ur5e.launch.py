@@ -14,7 +14,7 @@ def generate_launch_description():
 
     # Load and process xacro file
     xacro_file = os.path.join(
-        mujoco_ros2_ur_path, "models", "ur5e","urdf_ros2", "ur5e_mujoco.urdf.xacro"
+        mujoco_ros2_ur_path, "models", "ur5e", "urdf_ros2", "ur5e_mujoco.urdf.xacro"
     )
     doc = xacro.parse(open(xacro_file))
     xacro.process_doc(doc)
@@ -26,17 +26,15 @@ def generate_launch_description():
     )
     # griiper_controller_config_file = os.path.join(mujoco_ros2_ur_path, 'config', 'robotiq_controller_mujoco.yaml')
     mujoco_model_path = os.path.join(
-        mujoco_ros2_ur_path, "models", "ur5e","urdf","scene.xml"
+        mujoco_ros2_ur_path, "models", "ur5e", "urdf", "scene.xml"
     )
 
-    rviz_config_file = os.path.join(mujoco_ros2_ur_path,
-                                          'launch',
-                                          'camera_demo.rviz')
+    rviz_config_file = os.path.join(mujoco_ros2_ur_path, "launch", "camera_demo.rviz")
 
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[controller_config_file,robot_description],
+        parameters=[controller_config_file, robot_description],
         output="both",
     )
 
@@ -57,26 +55,24 @@ def generate_launch_description():
     #     arguments=["-d", rviz_config_file],
     # )
 
-
     controllers_active = [
         "joint_state_broadcaster",
+        "mujoco_body_publisher",
         # "admittance_controller",
-        
         "gripper_sample_controller",
-        #"joint_trajectory_controller",
+        # "joint_trajectory_controller",
         "force_torque_sensor_broadcaster",
     ]
-    
+
     controllers_inactive = [
-        "adaptive_mpc_controller",
+        "adaptive_assembly_controller",
         "interpolation_controller",
         # "interpoaltion_example_controller",
         # "effort_controller",
-        
     ]
-    
+
     spawner_nodes = []
-    
+
     # Spawn and activate these controllers
     for controller in controllers_active:
         spawner_nodes.append(
@@ -87,7 +83,7 @@ def generate_launch_description():
                 output="screen",
             )
         )
-    
+
     # Spawn but keep inactive (loaded but not started)
     for controller in controllers_inactive:
         spawner_nodes.append(
@@ -98,7 +94,7 @@ def generate_launch_description():
                 output="screen",
             )
         )
-    
+
     # gripper_controllers = [
     #     "gripper_controller",
 
@@ -118,7 +114,6 @@ def generate_launch_description():
             node_robot_state_publisher,
             # rviz_node,
             *spawner_nodes,
-
             # *gripper_spawner_nodes
         ]
     )

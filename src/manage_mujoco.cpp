@@ -21,91 +21,25 @@ ManageMujoco::ManageMujoco(int n_joints,
       queue_size_, 6, std::vector<CommandTypes>{CommandTypes::SENSOR})) // hardcoded
   , eef_state_buffer_(std::make_shared<StateBuffer>(
       queue_size_, 1, std::vector<CommandTypes>{CommandTypes::POSITION})) // hardcoded
+  , body_state_buffer_(std::make_shared<StateBuffer>(
+      queue_size_, 6, std::vector<CommandTypes>{CommandTypes::POSITION})) // hardcoded
   , simulation_flags_(std::make_shared<SimulationInteraction>())
   , tool(end_effector)
 {
-  initialize_mujoco_simulation();
   mujoco_joint_ids_.reserve(n_joints_);
   mujoco_eef_ids_.reserve(1); // hardcoded
-  std::vector<std::string> eef_names_{"robotiq_85_left_knuckle_joint"};
-
-  // Get Joint Ids from joint names( general purpose )
-  for (int i = 0; i < mujoco_model->njnt; i++)
-  {
-    // std::cout << std::endl
-    //           << std::string(mujoco_model->names + mujoco_model->name_jntadr[i]) << i <<
-    //           std::endl;
-    for (size_t j = 0; j < mujoco_joint_names_.size(); j++)
-    {
-      // std::cout << std::endl << mujoco_joint_names_[j] << j << std::endl;
-      if (std::string(mujoco_model->names + mujoco_model->name_jntadr[i]) == mujoco_joint_names_[j])
-      {
-        mujoco_joint_ids_.push_back(
-          mj_name2id(mujoco_model, mjOBJ_JOINT, mujoco_joint_names_[j].c_str()));
-        // std::cout << std::endl << "HI i ran" << i << std::endl;
-      }
-    }
-
-    for (size_t j = 0; j < eef_names_.size(); j++)
-    {
-      if (std::string(mujoco_model->names + mujoco_model->name_jntadr[i]) == eef_names_[j])
-      {
-        mujoco_eef_ids_.push_back(mj_name2id(mujoco_model, mjOBJ_JOINT, eef_names_[j].c_str()));
-      }
-    }
-  }
-
-  // (hardcoded) initial q , add to constructor definition (doesn't work properly)
-  joint_init_pos_vector_ = {4.72739881, -1.88774812, -1.1957251, -4.7682395, -1.6147786, 4.56333786};
-
-  for (size_t j = 0; j < mujoco_joint_names_.size(); j++)
-  {
-    // initialize commands to 0 and add the command type logic later
-    command_buffer_->push_value(control_mode_, j, joint_init_pos_vector_[j]); // hardcoded
-  }
-
-  for (size_t j = 0; j < eef_names_.size(); j++)
-  {
-    // initialize commands to 0 and add the command type logic later
-    eef_command_buffer_->push_value(control_mode_, j, 0.0); // hardcoded
-  }
-
-  // TO:Do ( later automated way of doing this ) get sensor information ( size 3 ) //hardcoded
-  mujoco_sensor_ids_.reserve(6);
-
-  for (int i = 0; i < mujoco_model->nsensor; i++)
-  {
-    std::cout << std::flush << mj_id2name(mujoco_model, mjOBJ_SENSOR, i) << std::endl;
-    if (std::string(mj_id2name(mujoco_model, mjOBJ_SENSOR, i)) == "motor_force" ||
-        std::string(mj_id2name(mujoco_model, mjOBJ_SENSOR, i)) == "motor_torque")
-    {
-      int dim = mujoco_model->sensor_dim[i];
-      for (int j = 0; j < dim; j++)
-      {
-        int sum = i + j;
-        if (i > 0)
-        {
-          sum = (i - 1) + j + mujoco_model->sensor_dim[0];
-        }
-        mujoco_sensor_ids_.push_back(sum);
-      }
-    }
-  }
-
-  for (size_t i = 0; i < mujoco_sensor_ids_.size(); i++)
-  {
-    std::cout << std::flush << mujoco_sensor_ids_[i] << std::endl;
-  }
-
+  initialize_mujoco_simulation();
   load_mujoco_object_simulation_.initialize_buffers(command_buffer_,
                                                     eef_command_buffer_,
                                                     state_buffer_,
                                                     sensor_buffer_,
                                                     eef_state_buffer_,
+                                                    body_state_buffer_,
                                                     simulation_flags_,
                                                     mujoco_joint_ids_,
                                                     mujoco_eef_ids_,
-                                                    mujoco_sensor_ids_);
+                                                    mujoco_sensor_ids_,
+                                                    mujoco_body_ids_);
 }
 ManageMujoco::~ManageMujoco()
 {
@@ -165,6 +99,86 @@ void ManageMujoco::initialize_mujoco_simulation()
       std::cout << std::flush << i << std::endl;
     }
   }
+
+  std::vector<std::string> eef_names_{"robotiq_85_left_knuckle_joint"};
+
+  // Get Joint Ids from joint names( general purpose )
+  for (int i = 0; i < mujoco_model->njnt; i++)
+  {
+    // std::cout << std::endl
+    //           << std::string(mujoco_model->names + mujoco_model->name_jntadr[i]) << i <<
+    //           std::endl;
+    for (size_t j = 0; j < mujoco_joint_names_.size(); j++)
+    {
+      // std::cout << std::endl << mujoco_joint_names_[j] << j << std::endl;
+      if (std::string(mujoco_model->names + mujoco_model->name_jntadr[i]) == mujoco_joint_names_[j])
+      {
+        mujoco_joint_ids_.push_back(
+          mj_name2id(mujoco_model, mjOBJ_JOINT, mujoco_joint_names_[j].c_str()));
+        // std::cout << std::endl << "HI i ran" << i << std::endl;
+      }
+    }
+
+    for (size_t j = 0; j < eef_names_.size(); j++)
+    {
+      if (std::string(mujoco_model->names + mujoco_model->name_jntadr[i]) == eef_names_[j])
+      {
+        mujoco_eef_ids_.push_back(mj_name2id(mujoco_model, mjOBJ_JOINT, eef_names_[j].c_str()));
+      }
+    }
+  }
+
+  // (hardcoded) initial q , add to constructor definition (doesn't work properly)
+  joint_init_pos_vector_ = {4.461, -1.8, -1.5, -4.106, -1.572, 4,461};
+
+  for (size_t j = 0; j < mujoco_joint_names_.size(); j++)
+  {
+    // initialize commands to 0 and add the command type logic later
+    command_buffer_->push_value(control_mode_, j, joint_init_pos_vector_[j]); // hardcoded
+  }
+
+  for (size_t j = 0; j < eef_names_.size(); j++)
+  {
+    // initialize commands to 0 and add the command type logic later
+    eef_command_buffer_->push_value(control_mode_, j, 0.0); // hardcoded
+  }
+
+  // TO:Do ( later automated way of doing this ) get sensor information ( size 3 ) //hardcoded
+  mujoco_sensor_ids_.reserve(6);
+
+  for (int i = 0; i < mujoco_model->nsensor; i++)
+  {
+    std::cout << std::flush << mj_id2name(mujoco_model, mjOBJ_SENSOR, i) << std::endl;
+    if (std::string(mj_id2name(mujoco_model, mjOBJ_SENSOR, i)) == "motor_force" ||
+        std::string(mj_id2name(mujoco_model, mjOBJ_SENSOR, i)) == "motor_torque")
+    {
+      int dim = mujoco_model->sensor_dim[i];
+      for (int j = 0; j < dim; j++)
+      {
+        int sum = i + j;
+        if (i > 0)
+        {
+          sum = (i - 1) + j + mujoco_model->sensor_dim[0];
+        }
+        mujoco_sensor_ids_.push_back(sum);
+      }
+    }
+  }
+
+  for (size_t i = 0; i < mujoco_sensor_ids_.size(); i++)
+  {
+    std::cout << std::flush << mujoco_sensor_ids_[i] << std::endl;
+  }
+
+  for (int i = 0; i < mujoco_joint_names_.size(); i++)
+  {
+    mujoco_data->qpos[mujoco_model->jnt_qposadr[mujoco_joint_ids_[i]]] = joint_init_pos_vector_[i];
+  }
+
+  // hardcoded
+  int peg_site_id  = mj_name2id(mujoco_model, mjOBJ_SITE, "peg_center_site");
+  int hole_site_id = mj_name2id(mujoco_model, mjOBJ_SITE, "hole_center_site");
+  mujoco_body_ids_ = {peg_site_id, hole_site_id};
 
   mujoco_with_ros2::MujocoInitLoadObjects::init(mujoco_model, mujoco_data);
 }

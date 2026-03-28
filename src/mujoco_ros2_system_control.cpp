@@ -29,6 +29,7 @@ MujocowithRos2SystemHardware::on_init(const hardware_interface::HardwareInfo& in
   joint_vel_vector_.resize(info_.joints.size(), 0.0);
   joint_eff_vector_.resize(info_.joints.size(), 0.0);
   sensor_vector_.resize(6, 0.0); // hardcoded
+  body_vector_.resize(6, 0.0);   // hardcoded
 
   joint_command_pos_vector_.resize(info_.joints.size(), 0.0);
   joint_command_vel_vector_.resize(info_.joints.size(), 0.0);
@@ -167,6 +168,19 @@ MujocowithRos2SystemHardware::export_state_interfaces()
   state_interfaces.emplace_back(
     hardware_interface::StateInterface("motor_fts", "torque.z", &sensor_vector_[5]));
 
+  // hardcoded
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("body1", "pos.x", &body_vector_[0]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("body1", "pos.y", &body_vector_[1]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("body1", "pos.z", &body_vector_[2]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("body2", "pos.x", &body_vector_[3]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("body2", "pos.y", &body_vector_[4]));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("body2", "pos.z", &body_vector_[5]));
 
   return state_interfaces;
 }
@@ -195,7 +209,7 @@ MujocowithRos2SystemHardware::export_command_interfaces()
       command_interfaces.emplace_back(hardware_interface::CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &joint_command_eff_vector_[i]));
     }
-    std::cout << std::endl <<"joint size: "<<joint_command_pos_vector_.size() << std::endl;
+    std::cout << std::endl << "joint size: " << joint_command_pos_vector_.size() << std::endl;
   }
 
   return command_interfaces;
@@ -299,6 +313,16 @@ hardware_interface::return_type MujocowithRos2SystemHardware::read(const rclcpp:
   {
     joint_eff_vector_[joint_pos_vector_.size() - 1] = read_data_;
   }
+  // hardcoded
+  for (size_t i = 0; i < 6; i++)
+  {
+    if (mujoco_manager->body_state_buffer_->pop_value(
+          mujoco_with_ros2::CommandTypes::POSITION, i, read_data_))
+    {
+      body_vector_[i] = read_data_;
+    }
+  }
+
   return hardware_interface::return_type::OK;
 }
 
